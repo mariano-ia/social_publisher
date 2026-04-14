@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTenantBySlug, getActiveVoiceVersion, listRunsByTenant, listVisualTemplates } from "@/lib/db/queries";
 import { startRun } from "@/lib/rendering/orchestrate";
+import { Icon } from "@/components/Icons";
+import { cadenceHumanDescription, engineLabel, statusLabel, archetypeLabel } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,7 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
 
   const [voice, recentRuns, templates] = await Promise.all([
     getActiveVoiceVersion(tenant.id),
-    listRunsByTenant(tenant.id, 8),
+    listRunsByTenant(tenant.id, 6),
     listVisualTemplates(tenant.id),
   ]);
 
@@ -24,132 +26,174 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
     redirect(`/t/${slug}/runs/${runId}`);
   }
 
+  const canGenerate = !!voice && templates.length > 0;
+
   return (
-    <div className="p-12 max-w-6xl">
-      <div className="mb-12">
-        <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold mb-2">
-          Tenant
+    <div className="p-12 max-w-6xl animate-in">
+      {/* Hero */}
+      <div className="mb-14">
+        <Link
+          href="/"
+          className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)] hover:text-[var(--text)] font-semibold inline-flex items-center gap-2 mb-4"
+        >
+          ← Cuentas
+        </Link>
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="font-display text-6xl uppercase tracking-tight leading-none mb-2">
+              {tenant.name}
+            </h1>
+            {tenant.website_url && (
+              <a
+                href={tenant.website_url}
+                target="_blank"
+                rel="noopener"
+                className="text-sm text-[var(--text-dim)] hover:text-[var(--accent)]"
+              >
+                {tenant.website_url.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+          </div>
+          <div className="chip">{engineLabel(tenant.image_engine)}</div>
         </div>
-        <h1 className="font-display text-6xl uppercase tracking-tight mb-2">{tenant.name}</h1>
-        <p className="text-[var(--text-dim)]">
-          {tenant.website_url && (
-            <a href={tenant.website_url} target="_blank" rel="noopener" className="hover:text-[var(--accent)]">
-              {tenant.website_url}
-            </a>
-          )}
-          {" · "}
-          <code className="text-xs">{tenant.slug}</code>
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-        <form action={handleGenerateBatch} className="card p-8 lg:col-span-2 flex flex-col items-start gap-4">
-          <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Generación rápida
+      {/* Primary actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-14">
+        {/* Main CTA */}
+        <form action={handleGenerateBatch} className="lg:col-span-3">
+          <div className="card card-hover p-10 flex flex-col gap-5 h-full relative overflow-hidden group">
+            {/* Decorative glow */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+              style={{
+                background: "radial-gradient(circle at 100% 0%, var(--accent-glow) 0%, transparent 50%)",
+              }}
+            />
+            <div className="relative">
+              <div className="chip mb-5">
+                <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+                Acción principal
+              </div>
+              <h2 className="font-display text-4xl uppercase tracking-tight mb-3">
+                Generar contenido
+              </h2>
+              <p className="text-sm text-[var(--text-dim)] leading-relaxed max-w-lg mb-2">
+                Creamos una tanda completa lista para publicar: copy con tu voz, visuales con tu paleta,
+                hashtags y CTAs por cada pieza.
+              </p>
+              <p className="text-xs text-[var(--text-faint)] leading-relaxed max-w-lg">
+                {cadenceHumanDescription(tenant.cadence)}
+              </p>
+            </div>
+
+            {!canGenerate && (
+              <div className="relative rounded-xl bg-[var(--bg-surface)] border border-[var(--warning)] border-opacity-40 p-4 text-xs text-[var(--warning)]">
+                {!voice && <div>⚠ Configurá la voz de la cuenta antes de generar.</div>}
+                {templates.length === 0 && <div>⚠ Todavía no hay plantillas visuales activas.</div>}
+              </div>
+            )}
+
+            <div className="relative flex items-center gap-3 mt-2">
+              <button
+                type="submit"
+                disabled={!canGenerate}
+                className="btn btn-primary btn-lg"
+              >
+                <Icon.Sparkles size={18} />
+                Generar contenido
+              </button>
+              <span className="text-xs text-[var(--text-faint)]">Tarda 3–5 min</span>
+            </div>
           </div>
-          <h2 className="font-display text-3xl uppercase">Generar tanda completa</h2>
-          <p className="text-sm text-[var(--text-dim)]">
-            {tenant.cadence.ig_feed} IG feed + {tenant.cadence.li_single} LI single +{" "}
-            {tenant.cadence.li_carousel} LI carrusel × {tenant.cadence.carousel_slides} slides ={" "}
-            {tenant.cadence.ig_feed + tenant.cadence.li_single + tenant.cadence.li_carousel} posts /{" "}
-            {tenant.cadence.ig_feed +
-              tenant.cadence.li_single +
-              tenant.cadence.li_carousel * tenant.cadence.carousel_slides}{" "}
-            imágenes.
-          </p>
-          {!voice && (
-            <p className="text-sm text-[var(--warning)]">
-              ⚠️ Sin brand voice activa. Configurá una antes de generar.
-            </p>
-          )}
-          {templates.length === 0 && (
-            <p className="text-sm text-[var(--warning)]">
-              ⚠️ Sin templates visuales. Agregá al menos uno antes de generar.
-            </p>
-          )}
-          <button type="submit" className="btn btn-primary mt-2" disabled={!voice || templates.length === 0}>
-            Generar tanda
-          </button>
         </form>
 
+        {/* Secondary CTA: Post Generator */}
         <Link
           href={`/t/${slug}/generate?mode=idea`}
-          className="card p-8 flex flex-col items-start gap-3 hover:border-[var(--accent)] transition-colors"
+          className="card card-hover p-8 flex flex-col gap-4 lg:col-span-2 group"
         >
-          <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Otro modo
-          </div>
-          <h2 className="font-display text-2xl uppercase">Desde una idea</h2>
-          <p className="text-sm text-[var(--text-dim)]">
-            Tipea una idea y generá un solo post (IG, LI single o carrusel).
+          <div className="chip mb-2">Otro modo</div>
+          <h2 className="font-display text-2xl uppercase tracking-tight">Post generator</h2>
+          <p className="text-sm text-[var(--text-dim)] leading-relaxed">
+            ¿Tenés una idea puntual? Tipeala y generamos un post específico en el formato que quieras.
           </p>
-          <span className="text-sm text-[var(--accent)] mt-2">Generar single →</span>
+          <div className="mt-auto flex items-center gap-2 text-sm font-semibold text-[var(--accent)] group-hover:gap-3 transition-all">
+            <Icon.Wand size={16} />
+            Abrir post generator
+          </div>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-        <Link
+      {/* Secondary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-14">
+        <StatCard
           href={`/t/${slug}/voice`}
-          className="card p-6 hover:border-[var(--accent)] transition-colors"
-        >
-          <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold mb-2">
-            Brand voice
-          </div>
-          <div className="font-display text-2xl uppercase mb-1">
-            {voice ? `v${voice.version}` : "Sin configurar"}
-          </div>
-          <div className="text-xs text-[var(--text-dim)]">
-            {voice?.archetype ?? "—"}
-            {voice?.system_prompt_override ? " · override activo" : ""}
-          </div>
-        </Link>
-
-        <Link
+          icon={<Icon.Mic size={18} />}
+          label="Voz y tono"
+          value={voice ? `v${voice.version}` : "Sin configurar"}
+          sub={
+            voice?.system_prompt_override
+              ? "Prompt custom activo"
+              : archetypeLabel(voice?.archetype)
+          }
+        />
+        <StatCard
           href={`/t/${slug}/templates`}
-          className="card p-6 hover:border-[var(--accent)] transition-colors"
-        >
-          <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold mb-2">
-            Templates visuales
-          </div>
-          <div className="font-display text-2xl uppercase mb-1">{templates.length}</div>
-          <div className="text-xs text-[var(--text-dim)]">activos · {tenant.image_engine}</div>
-        </Link>
-
-        <Link
+          icon={<Icon.Image size={18} />}
+          label="Plantillas visuales"
+          value={`${templates.length} activas`}
+          sub={engineLabel(tenant.image_engine)}
+        />
+        <StatCard
           href={`/t/${slug}/history`}
-          className="card p-6 hover:border-[var(--accent)] transition-colors"
-        >
-          <div className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold mb-2">
-            Historial
-          </div>
-          <div className="font-display text-2xl uppercase mb-1">{recentRuns.length}</div>
-          <div className="text-xs text-[var(--text-dim)]">runs recientes</div>
-        </Link>
+          icon={<Icon.Clock size={18} />}
+          label="Historial"
+          value={`${recentRuns.length} runs`}
+          sub={recentRuns.length > 0 ? "Click para ver el detalle" : "Todavía sin generaciones"}
+        />
       </div>
 
+      {/* Recent runs */}
       {recentRuns.length > 0 && (
         <div>
-          <h2 className="font-display text-2xl uppercase mb-4">Runs recientes</h2>
-          <div className="card divide-y divide-[var(--border)]">
-            {recentRuns.map((r) => (
-              <Link
-                key={r.id}
-                href={`/t/${slug}/runs/${r.id}`}
-                className="block p-4 hover:bg-[var(--bg-surface)] transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium">
-                      {r.mode === "batch" ? "Batch (8 posts)" : "Single (1 post)"}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-2xl uppercase tracking-tight">Runs recientes</h2>
+            <Link
+              href={`/t/${slug}/history`}
+              className="text-sm font-semibold text-[var(--accent)] hover:opacity-80"
+            >
+              Ver todos →
+            </Link>
+          </div>
+          <div className="card divide-y divide-[var(--border)] overflow-hidden">
+            {recentRuns.map((r) => {
+              const status = statusLabel(r.status);
+              return (
+                <Link
+                  key={r.id}
+                  href={`/t/${slug}/runs/${r.id}`}
+                  className="block p-5 hover:bg-[var(--bg-surface)] transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-[var(--text)]">
+                        {r.mode === "batch" ? "Tanda completa" : "Post individual"}
+                      </div>
+                      <div className="text-xs text-[var(--text-faint)] mt-0.5">
+                        {new Date(r.created_at).toLocaleString("es-AR", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
                     </div>
-                    <div className="text-xs text-[var(--text-faint)]">
-                      {new Date(r.created_at).toLocaleString("es-AR")}
-                    </div>
+                    <StatusBadge status={status.label} color={status.color} />
                   </div>
-                  <StatusBadge status={r.status} />
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
@@ -157,24 +201,55 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; color: string }> = {
-    pending: { label: "Pendiente", color: "var(--text-faint)" },
-    generating: { label: "Generando…", color: "var(--accent)" },
-    images_pending: { label: "Imágenes…", color: "var(--accent)" },
-    ready_for_review: { label: "Listo", color: "var(--success)" },
-    approved: { label: "Aprobado", color: "var(--success)" },
-    exported: { label: "Exportado", color: "var(--accent-light)" },
-    failed: { label: "Falló", color: "var(--danger)" },
-    discarded: { label: "Descartado", color: "var(--text-faint)" },
-  };
-  const cfg = map[status] ?? { label: status, color: "var(--text-dim)" };
+function StatCard({
+  href,
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <Link href={href} className="card card-hover p-6 flex flex-col gap-3 group">
+      <div className="flex items-center justify-between">
+        <div className="w-9 h-9 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
+          {icon}
+        </div>
+        <Icon.ChevronRight size={16} />
+      </div>
+      <div>
+        <div className="text-xs uppercase tracking-[0.14em] text-[var(--text-faint)] font-semibold mb-1">
+          {label}
+        </div>
+        <div className="text-2xl font-bold text-[var(--text)]">{value}</div>
+        {sub && <div className="text-xs text-[var(--text-dim)] mt-1">{sub}</div>}
+      </div>
+    </Link>
+  );
+}
+
+function StatusBadge({ status, color }: { status: string; color: string }) {
+  const colorVar =
+    color === "success"
+      ? "var(--success)"
+      : color === "danger"
+        ? "var(--danger)"
+        : color === "warning"
+          ? "var(--warning)"
+          : color === "accent"
+            ? "var(--accent)"
+            : "var(--text-dim)";
   return (
     <span
-      className="text-[10px] uppercase tracking-widest font-semibold py-1 px-2 rounded-full"
-      style={{ color: cfg.color, border: `1px solid ${cfg.color}` }}
+      className="text-[10px] uppercase tracking-[0.14em] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap"
+      style={{ color: colorVar, border: `1px solid ${colorVar}` }}
     >
-      {cfg.label}
+      {status}
     </span>
   );
 }

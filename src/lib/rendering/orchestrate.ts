@@ -246,7 +246,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
           slideIndex: slide.index,
           slideKind: slide.kind,
           slideTitle: slide.title ?? "",
-          slideBody: slide.body,
+          slideBody: slide.body ?? undefined,
           pillar: post.pillar ?? vars.pillar,
           scene_hint: slide.visual_hint ?? vars.scene_hint,
           tenantSlug: tenant.slug,

@@ -3,16 +3,18 @@ import { z } from "zod";
 // Slide schema. Accept both 0-indexed (0..4) and 1-indexed (1..5) because
 // Claude sometimes naturally 0-indexes despite our prompts. The orchestrator
 // renumbers to 1..5 canonically before persisting.
+// All optional string fields use .nullish() because Claude sometimes returns
+// `null` instead of omitting the key, and we want both treated the same.
 export const SlideSchema = z.object({
   index: z.number().int().min(0).max(5),
   kind: z.enum(["cover", "content", "cta"]),
-  title: z.string().optional(),
-  subtitle: z.string().optional(),
-  body: z.string().optional(),
-  visual_hint: z.string().optional(),
+  title: z.string().nullish(),
+  subtitle: z.string().nullish(),
+  body: z.string().nullish(),
+  visual_hint: z.string().nullish(),
 });
 
-// Single post schema
+// Single post schema. Tolerant of Claude returning null for optional fields.
 export const GeneratedPostSchema = z
   .object({
     slot_order: z.number().int().min(1).max(8),
@@ -21,11 +23,11 @@ export const GeneratedPostSchema = z
     topic: z.string().min(1),
     title: z.string().min(1),
     copy: z.string().min(1),
-    hashtags: z.array(z.string()).default([]),
-    cta: z.string().optional(),
+    hashtags: z.array(z.string()).nullish().transform((v) => v ?? []),
+    cta: z.string().nullish(),
     visual_template_slug: z.string().min(1),
-    visual_variables: z.record(z.string(), z.unknown()).default({}),
-    slides: z.array(SlideSchema).optional(),
+    visual_variables: z.record(z.string(), z.unknown()).nullish().transform((v) => v ?? {}),
+    slides: z.array(SlideSchema).nullish(),
   })
   .superRefine((post, ctx) => {
     if (post.format === "li_carousel") {

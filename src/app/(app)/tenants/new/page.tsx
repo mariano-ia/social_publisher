@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createTenant, createNewVoiceVersion } from "@/lib/db/queries";
 import type { ImageEngine } from "@/lib/db/types";
+import { Icon } from "@/components/Icons";
 
 export default function NewTenantPage() {
   async function create(formData: FormData) {
@@ -20,7 +22,6 @@ export default function NewTenantPage() {
       cadence: { ig_feed: 4, li_single: 2, li_carousel: 2, carousel_slides: 5 },
     });
 
-    // Create empty v1 voice so user can edit
     await createNewVoiceVersion(tenant.id, {
       archetype: null,
       dimensions: {},
@@ -43,48 +44,68 @@ export default function NewTenantPage() {
   }
 
   return (
-    <div className="p-12 max-w-2xl">
-      <h1 className="font-display text-5xl uppercase tracking-tight mb-2">Nuevo tenant</h1>
-      <p className="text-[var(--text-dim)] mb-8 text-sm">
-        Después de crearlo, te llevo al editor de voz para configurar la voz inicial.
+    <div className="p-12 max-w-2xl animate-in">
+      <Link
+        href="/"
+        className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)] hover:text-[var(--text)] font-semibold"
+      >
+        ← Cuentas
+      </Link>
+      <h1 className="font-display text-5xl uppercase tracking-tight mt-3 mb-2">Nueva cuenta</h1>
+      <p className="text-[var(--text-dim)] mb-8 max-w-md">
+        Creamos la cuenta y te llevamos al editor de voz para configurar la personalidad de la marca.
       </p>
 
       <form action={create} className="card p-8 flex flex-col gap-6">
-        <label className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Nombre
-          </span>
-          <input type="text" name="name" required placeholder="Mi Marca" />
-        </label>
+        <Field label="Nombre de la marca" hint="Cómo se muestra en el dashboard.">
+          <input type="text" name="name" required placeholder="Mi Marca" autoFocus />
+        </Field>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Slug (URL-safe)
-          </span>
+        <Field label="Slug" hint="URL-safe, solo letras, números y guiones. Se usa en los URLs internos.">
           <input type="text" name="slug" required placeholder="mi-marca" />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Website (opcional)
-          </span>
-          <input type="url" name="website_url" placeholder="https://" />
-        </label>
+        <Field label="Sitio web" hint="Opcional. Lo usamos para análisis automático de voz en el futuro.">
+          <input type="url" name="website_url" placeholder="https://mimarca.com" />
+        </Field>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-widest text-[var(--text-faint)] font-semibold">
-            Image engine
-          </span>
+        <Field label="Sistema visual" hint="Cómo generamos las imágenes de esta cuenta.">
           <select name="image_engine" defaultValue="html">
-            <option value="html">HTML → PNG (puppeteer, sin fotos)</option>
-            <option value="argo_photo_panel">Argo photo+panel (gpt-image-1, con fotos)</option>
+            <option value="html">HTML diseñado · sin fotos, solo tipografía y color</option>
+            <option value="argo_photo_panel">Foto editorial + overlay · con fotos generadas por IA</option>
           </select>
-        </label>
+        </Field>
 
-        <button type="submit" className="btn btn-primary self-start mt-2">
-          Crear tenant y editar voz
-        </button>
+        <div className="flex gap-3 pt-4 border-t border-[var(--border)]">
+          <button type="submit" className="btn btn-primary btn-lg">
+            <Icon.Plus size={16} />
+            Crear cuenta
+          </button>
+          <Link href="/" className="btn btn-ghost">
+            Cancelar
+          </Link>
+        </div>
       </form>
     </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <div>
+        <div className="text-sm font-semibold text-[var(--text)]">{label}</div>
+        {hint && <div className="text-xs text-[var(--text-dim)] mt-0.5">{hint}</div>}
+      </div>
+      <div className="mt-1">{children}</div>
+    </label>
   );
 }

@@ -10,7 +10,7 @@ import {
 import type { GeneratedPost, GeneratedAsset, VisualTemplate, Tenant } from "@/lib/db/types";
 import { ReviewActions } from "./ReviewActions";
 import { PostCard } from "./PostCard";
-import { AutoRefresh } from "./AutoRefresh";
+import { GenerationProgress } from "./GenerationProgress";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +35,10 @@ export default async function RunReviewPage({
     arr.push(a);
     assetsByPost.set(a.post_id, arr);
   });
-  // Sort slides by index
   for (const arr of assetsByPost.values()) {
     arr.sort((a, b) => (a.slide_index ?? 0) - (b.slide_index ?? 0));
   }
 
-  // For the template selector, we need available templates per format
   const templatesByFormat = new Map<string, VisualTemplate[]>();
   for (const fmt of ["ig_feed", "li_single", "li_carousel"] as const) {
     templatesByFormat.set(fmt, await listVisualTemplatesForFormat(tenant.id, fmt));
@@ -49,22 +47,39 @@ export default async function RunReviewPage({
   const isReady = run.status === "ready_for_review" || run.status === "approved" || run.status === "exported";
   const isGenerating = run.status === "generating" || run.status === "images_pending" || run.status === "pending";
 
+  const postSlots = posts.map((p) => {
+    const postAssets = assetsByPost.get(p.id) ?? [];
+    const expected = p.format === "li_carousel" ? p.slides?.length ?? 5 : 1;
+    const count = postAssets.length;
+    return {
+      order: p.slot_order ?? 0,
+      done: count >= expected,
+      partial: count > 0 && count < expected,
+    };
+  });
+
   return (
-    <div className="p-12 max-w-7xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-12 max-w-7xl animate-in">
+      <div className="flex items-center justify-between mb-8 gap-6 flex-wrap">
         <div>
           <Link
             href={`/t/${slug}`}
-            className="text-xs uppercase tracking-widest text-[var(--text-faint)] hover:text-[var(--text)]"
+            className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)] hover:text-[var(--text)] font-semibold"
           >
             ← {tenant.name}
           </Link>
-          <h1 className="font-display text-5xl uppercase tracking-tight mt-2">
-            Run · {run.mode === "batch" ? "Batch" : "Single"}
+          <h1 className="font-display text-5xl uppercase tracking-tight mt-3">
+            {run.mode === "batch" ? "Tanda completa" : "Post individual"}
           </h1>
           <div className="text-sm text-[var(--text-dim)] mt-2">
-            {new Date(run.created_at).toLocaleString("es-AR")} ·{" "}
-            <code className="text-xs">{run.id.slice(0, 8)}</code>
+            {new Date(run.created_at).toLocaleString("es-AR", {
+              day: "2-digit",
+              month: "long",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            {" · "}
+            <code className="text-xs text-[var(--text-faint)]">{run.id.slice(0, 8)}</code>
           </div>
         </div>
 
@@ -72,27 +87,24 @@ export default async function RunReviewPage({
       </div>
 
       {isGenerating && (
-        <div className="card p-8 mb-8 text-center">
-          <div className="font-display text-2xl uppercase mb-2">Generando…</div>
-          <div className="text-sm text-[var(--text-dim)] mb-2">
-            {run.status === "pending" && "Encolando…"}
-            {run.status === "generating" && "Claude está escribiendo el copy."}
-            {run.status === "images_pending" &&
-              `Renderizando imágenes · ${assets.length} / ${computeExpectedAssets(posts, tenant)}`}
-          </div>
-          <div className="text-xs text-[var(--text-faint)] mb-4">
-            {computeProgressDetail(posts, assets)} · iniciado{" "}
-            {Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000)}s atrás · auto-refresh
-            cada 3s
-          </div>
-          <AutoRefresh />
-        </div>
+        <GenerationProgress
+          status={run.status}
+          startedAt={run.started_at}
+          assetsDone={assets.length}
+          assetsExpected={computeExpectedAssets(posts, tenant)}
+          postSlots={postSlots}
+        />
       )}
 
       {run.status === "failed" && (
         <div className="card p-8 mb-8 border-[var(--danger)]">
-          <div className="font-display text-2xl uppercase mb-2 text-[var(--danger)]">Falló</div>
-          <pre className="text-xs text-[var(--text-dim)] whitespace-pre-wrap">{run.error}</pre>
+          <div className="font-display text-2xl uppercase mb-2 text-[var(--danger)]">La generación falló</div>
+          <p className="text-sm text-[var(--text-dim)] mb-4">
+            Algo en el pipeline devolvió un error. Acá está el detalle técnico:
+          </p>
+          <pre className="text-xs text-[var(--text-muted)] whitespace-pre-wrap bg-[var(--bg-surface)] p-4 rounded-lg overflow-auto">
+            {run.error}
+          </pre>
         </div>
       )}
 
@@ -113,8 +125,6 @@ export default async function RunReviewPage({
 }
 
 function computeExpectedAssets(posts: GeneratedPost[], tenant: Tenant): number {
-  // Each single-format post needs 1 image. Each carousel post needs
-  // tenant.cadence.carousel_slides images.
   let total = 0;
   for (const p of posts) {
     if (p.format === "li_carousel") total += tenant.cadence.carousel_slides;
@@ -122,26 +132,3 @@ function computeExpectedAssets(posts: GeneratedPost[], tenant: Tenant): number {
   }
   return total || 1;
 }
-
-function computeProgressDetail(posts: GeneratedPost[], assets: GeneratedAsset[]): string {
-  const bySlot = new Map<number, { post: GeneratedPost; count: number; expected: number }>();
-  for (const p of posts) {
-    const expected = p.format === "li_carousel" ? p.slides?.length ?? 5 : 1;
-    bySlot.set(p.slot_order ?? 0, { post: p, count: 0, expected });
-  }
-  for (const a of assets) {
-    const post = posts.find((p) => p.id === a.post_id);
-    if (!post) continue;
-    const entry = bySlot.get(post.slot_order ?? 0);
-    if (entry) entry.count++;
-  }
-  const sorted = [...bySlot.values()].sort((a, b) => (a.post.slot_order ?? 0) - (b.post.slot_order ?? 0));
-  return sorted
-    .map((e) => {
-      const done = e.count >= e.expected;
-      const icon = done ? "✓" : e.count > 0 ? "…" : "·";
-      return `${icon}${e.post.slot_order}`;
-    })
-    .join(" ");
-}
-

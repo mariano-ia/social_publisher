@@ -47,23 +47,23 @@ export function getArgoLogoDataUrl(): string {
 export interface ArgoTemplateProps {
   width: number;
   height: number;
-  title?: string;
-  subtitle?: string;
-  body_text?: string;
-  pillar?: string;
-  pillar_display?: string; // Human-readable pillar name for the chip (e.g. "CIENCIA & MÉTODO")
-  cta_url?: string;        // e.g. argomethod.com
-  cta_text?: string;       // e.g. "Iniciar prueba gratuita"
+  title?: string | null;
+  subtitle?: string | null;
+  body_text?: string | null;
+  pillar?: string | null;
+  pillar_display?: string | null; // Human-readable pillar name for the chip
+  cta_url?: string | null;        // e.g. argomethod.com
+  cta_text?: string | null;       // e.g. "Iniciar prueba gratuita"
   // Carousel context
   slide?: {
     index: number;
     kind: "cover" | "content" | "cta";
-    title?: string;
-    body?: string;
+    title?: string | null;
+    body?: string | null;
   };
   total_slides?: number;
   // Pre-rendered photo URL from gpt-image-1 (for IG feed / LI single / carousel cover)
-  photo_url?: string;
+  photo_url?: string | null;
 }
 
 export function htmlShell(opts: { title: string; styles: string; body: string }): string {
@@ -82,7 +82,7 @@ ${opts.styles}
  * Map pillar slug from the content generator to a human-readable display
  * string used inside the orange chip.
  */
-export function displayPillar(pillarSlug?: string): string {
+export function displayPillar(pillarSlug?: string | null): string {
   if (!pillarSlug) return "ARGO METHOD";
   const map: Record<string, string> = {
     ciencia_metodologia: "CIENCIA & MÉTODO",
@@ -92,6 +92,7 @@ export function displayPillar(pillarSlug?: string): string {
   return map[pillarSlug] ?? pillarSlug.toUpperCase().replace(/_/g, " ");
 }
 
-export function escapeHtml(s: string): string {
+export function escapeHtml(s: string | null | undefined): string {
+  if (!s) return "";
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

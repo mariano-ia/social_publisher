@@ -113,10 +113,10 @@ export interface GenerationRun {
 export interface GeneratedSlide {
   index: number;
   kind: SlideKind;
-  title?: string;
-  subtitle?: string;
-  body?: string;
-  visual_hint?: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  visual_hint?: string | null;
 }
 
 export interface GeneratedPost {

@@ -87,17 +87,17 @@ html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg
 export interface YacareTemplateProps {
   width: number;
   height: number;
-  title?: string;
-  subtitle?: string;
-  body_text?: string;
-  cta?: string;
-  pillar?: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body_text?: string | null;
+  cta?: string | null;
+  pillar?: string | null;
   // Carousel slide context
   slide?: {
     index: number;
     kind: "cover" | "content" | "cta";
-    title?: string;
-    body?: string;
+    title?: string | null;
+    body?: string | null;
   };
   // Used by yc-cover: the list of slide titles that come next in the carousel.
   // Rendered as a teaser list in the cover to preview what's inside.
