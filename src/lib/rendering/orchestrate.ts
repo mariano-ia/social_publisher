@@ -15,7 +15,7 @@ import type { GeneratedPost, PostFormat, Tenant, VisualTemplate } from "@/lib/db
 import { composeSystemPrompt } from "@/lib/prompts/compose";
 import { generateBatch } from "@/lib/generator";
 import type { GeneratedPostInput } from "@/lib/generator/schema";
-import { renderArgoSingle, renderArgoCarouselSlide } from "./argo-photo";
+import { renderArgoSinglePhoto, renderArgoCarouselCoverPhoto } from "./argo-photo";
 import { renderHtmlToPng } from "./html-renderer";
 import { getHtmlTemplate, FORMAT_DIMS } from "./template-registry";
 
@@ -88,7 +88,10 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
     }),
   );
 
-  // Persist posts (status: draft, no images yet)
+  // Persist posts (status: draft, no images yet).
+  // Canonicalize slide indexes to 1..5 by array position, so downstream code
+  // (renderer, export, PostCard) can always assume 1-indexed slides regardless
+  // of what Claude returned.
   const postsToInsert = normalized.map(({ input: p, template }) => ({
     run_id: runId,
     tenant_id: tenant.id,
@@ -104,7 +107,7 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
     hashtags: p.hashtags,
     cta: p.cta ?? null,
     slot_order: p.slot_order,
-    slides: p.slides ?? null,
+    slides: p.slides ? p.slides.map((s, i) => ({ ...s, index: i + 1 })) : null,
     status: "draft" as const,
     rejection_reason: null,
   }));
@@ -176,9 +179,14 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
     scene_hint?: string;
   };
 
-  // ARGO single posts → gpt-image-1
+  // ARGO single posts → gpt-image-1 for the photo, then HTML compositing.
+  // Pipeline:
+  //   1. Ask gpt-image-1 for a photo-only image (no text, no UI)
+  //   2. Render the ar-ig-photo HTML template with photo_url pointing to it
+  //   3. Upload the composited PNG
+  // The intermediate photo is kept in storage too (with a -photo suffix) for debug.
   if (tenant.image_engine === "argo_photo_panel" && (post.format === "ig_feed" || post.format === "li_single")) {
-    const result = await renderArgoSingle({
+    const photoResult = await renderArgoSinglePhoto({
       format: post.format,
       title: vars.title ?? post.title ?? "",
       subtitle: vars.subtitle,
@@ -187,43 +195,126 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
       tenantSlug: tenant.slug,
       postId: post.id,
     });
+
+    // Composite the HTML panel over the photo
+    const tmpl = getHtmlTemplate("ar-ig-photo");
+    if (!tmpl) throw new Error("ar-ig-photo template not found");
+    const dims = FORMAT_DIMS[post.format];
+    const html = tmpl({
+      width: dims.width,
+      height: dims.height,
+      title: vars.title ?? post.title ?? "",
+      subtitle: vars.subtitle,
+      pillar: post.pillar ?? vars.pillar,
+      photo_url: photoResult.publicUrl,
+    });
+    const composited = await renderHtmlToPng({
+      html,
+      width: dims.width,
+      height: dims.height,
+      tenantSlug: tenant.slug,
+      postId: post.id,
+      filename: "single.png",
+    });
     await insertAsset({
       post_id: post.id,
       kind: "single",
       slide_index: null,
-      storage_path: result.storagePath,
-      public_url: result.publicUrl,
-      width: result.width,
-      height: result.height,
-      prompt_used: result.promptUsed,
+      storage_path: composited.storagePath,
+      public_url: composited.publicUrl,
+      width: composited.width,
+      height: composited.height,
+      prompt_used: photoResult.promptUsed,
     });
     return;
   }
 
-  // ARGO carousel → 5 slides via gpt-image-1
+  // ARGO carousel → HYBRID pipeline:
+  //   - slide.kind === "cover"   → gpt-image-1 photo + ar-ig-photo HTML composite
+  //     (so the cover has a real photo with the overlay panel)
+  //   - slide.kind === "content" → ar-carousel-content HTML template (no photo)
+  //   - slide.kind === "cta"     → ar-carousel-cta HTML template (no photo)
+  // This saves 8 gpt-image-1 calls per batch (vs. one per slide).
   if (tenant.image_engine === "argo_photo_panel" && post.format === "li_carousel") {
     const slides = post.slides ?? [];
     for (const slide of slides) {
-      const result = await renderArgoCarouselSlide({
-        slideIndex: slide.index,
-        slideKind: slide.kind,
-        slideTitle: slide.title ?? "",
-        slideBody: slide.body,
-        pillar: post.pillar ?? vars.pillar,
-        scene_hint: slide.visual_hint ?? vars.scene_hint,
-        tenantSlug: tenant.slug,
-        postId: post.id,
-      });
-      await insertAsset({
-        post_id: post.id,
-        kind: "slide",
-        slide_index: slide.index,
-        storage_path: result.storagePath,
-        public_url: result.publicUrl,
-        width: result.width,
-        height: result.height,
-        prompt_used: result.promptUsed,
-      });
+      const dims = FORMAT_DIMS.li_carousel;
+
+      if (slide.kind === "cover") {
+        // 1. Generate the photo
+        const photoResult = await renderArgoCarouselCoverPhoto({
+          slideIndex: slide.index,
+          slideKind: slide.kind,
+          slideTitle: slide.title ?? "",
+          slideBody: slide.body,
+          pillar: post.pillar ?? vars.pillar,
+          scene_hint: slide.visual_hint ?? vars.scene_hint,
+          tenantSlug: tenant.slug,
+          postId: post.id,
+        });
+        // 2. Composite the ar-ig-photo template over it (headline + chip + panel)
+        const coverTmpl = getHtmlTemplate("ar-ig-photo");
+        if (!coverTmpl) throw new Error("ar-ig-photo template not found");
+        const coverHtml = coverTmpl({
+          width: dims.width,
+          height: dims.height,
+          title: slide.title ?? post.title ?? "",
+          subtitle: slide.body ?? undefined,
+          pillar: post.pillar ?? vars.pillar,
+          photo_url: photoResult.publicUrl,
+        });
+        const composited = await renderHtmlToPng({
+          html: coverHtml,
+          width: dims.width,
+          height: dims.height,
+          tenantSlug: tenant.slug,
+          postId: post.id,
+          filename: `slide-${String(slide.index).padStart(2, "0")}.png`,
+        });
+        await insertAsset({
+          post_id: post.id,
+          kind: "slide",
+          slide_index: slide.index,
+          storage_path: composited.storagePath,
+          public_url: composited.publicUrl,
+          width: composited.width,
+          height: composited.height,
+          prompt_used: photoResult.promptUsed,
+        });
+      } else {
+        // Content or CTA slide → pure HTML, no gpt-image-1
+        const templateSlug = slide.kind === "cta" ? "ar-carousel-cta" : "ar-carousel-content";
+        const tmpl = getHtmlTemplate(templateSlug);
+        if (!tmpl) throw new Error(`${templateSlug} template not found`);
+        const html = tmpl({
+          width: dims.width,
+          height: dims.height,
+          title: slide.title ?? "",
+          subtitle: slide.body ?? undefined,
+          body_text: slide.body ?? undefined,
+          pillar: post.pillar ?? vars.pillar,
+          slide,
+          total_slides: slides.length,
+        });
+        const result = await renderHtmlToPng({
+          html,
+          width: dims.width,
+          height: dims.height,
+          tenantSlug: tenant.slug,
+          postId: post.id,
+          filename: `slide-${String(slide.index).padStart(2, "0")}.png`,
+        });
+        await insertAsset({
+          post_id: post.id,
+          kind: "slide",
+          slide_index: slide.index,
+          storage_path: result.storagePath,
+          public_url: result.publicUrl,
+          width: result.width,
+          height: result.height,
+          prompt_used: null,
+        });
+      }
     }
     return;
   }
@@ -236,17 +327,33 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
 
   if (post.format === "li_carousel") {
     const slides = post.slides ?? [];
+    // Build the teaser list for the cover: titles of slides 2..5 (content + cta)
+    const teaserTitles = slides
+      .filter((s) => s.kind !== "cover")
+      .map((s) => s.title ?? "")
+      .filter((t) => t.length > 0);
+
     for (const slide of slides) {
       const dims = FORMAT_DIMS.li_carousel;
-      const html = tmpl({
+      // Cover slides use yc-cover regardless of the post's assigned template.
+      // Content + cta slides use the post's assigned template.
+      const slideTemplate = slide.kind === "cover" ? getHtmlTemplate("yc-cover") : tmpl;
+      if (!slideTemplate) throw new Error(`Template not found for slide kind ${slide.kind}`);
+
+      const html = slideTemplate({
         width: dims.width,
         height: dims.height,
-        title: slide.title ?? vars.title,
-        subtitle: vars.subtitle,
+        title: slide.kind === "cover" ? post.title ?? vars.title : slide.title ?? vars.title,
+        subtitle:
+          slide.kind === "cover"
+            ? slide.body ?? vars.subtitle
+            : vars.subtitle,
         body_text: slide.body ?? vars.body_text,
         cta: vars.title,
         pillar: post.pillar ?? vars.pillar,
         slide,
+        slide_titles: slide.kind === "cover" ? teaserTitles : undefined,
+        total_slides: slide.kind === "cover" ? slides.length : undefined,
       });
       const result = await renderHtmlToPng({
         html,

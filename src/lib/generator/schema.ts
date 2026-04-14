@@ -1,8 +1,10 @@
 import { z } from "zod";
 
-// Slide schema (only for li_carousel posts)
+// Slide schema. Accept both 0-indexed (0..4) and 1-indexed (1..5) because
+// Claude sometimes naturally 0-indexes despite our prompts. The orchestrator
+// renumbers to 1..5 canonically before persisting.
 export const SlideSchema = z.object({
-  index: z.number().int().min(1).max(5),
+  index: z.number().int().min(0).max(5),
   kind: z.enum(["cover", "content", "cta"]),
   title: z.string().optional(),
   subtitle: z.string().optional(),

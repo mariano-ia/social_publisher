@@ -16,17 +16,19 @@ export function ycContrarianTake(props: YacareTemplateProps): string {
   const body = `
     <div class="frame">
       <div class="glow"></div>
+      <div class="corner-shape"></div>
+      <div class="corner-shape-inner"></div>
       <div class="header">
         ${logoTag(props)}
         <div class="tag">Manifiesto</div>
       </div>
-      <div class="spacer"></div>
-      <div class="headline">
-        ${intro ? `<span class="small">${escapeHtml(intro.trim())}</span>` : ""}
-        Necesitás <span class="accent">${escapeHtml(accent)}</span>.
+      <div class="middle">
+        <div class="headline">
+          ${intro ? `<span class="small">${escapeHtml(intro.trim())}</span>` : ""}
+          Necesitás <span class="accent">${escapeHtml(accent)}</span>.
+        </div>
+        <div class="divider"></div>
       </div>
-      <div class="divider"></div>
-      <div class="spacer"></div>
       <div class="footer">
         <div class="slug"><span class="dot"></span>CONTRARIAN TAKE</div>
         <div class="slug">YC · 01</div>

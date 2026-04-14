@@ -25,7 +25,7 @@ Para cada post:
 3. Escribí \`title\` (hook), \`copy\` (cuerpo completo listo para publicar), \`hashtags\` (array), \`cta\`.
 4. Elegí \`visual_template_slug\` de la lista de templates disponibles para ese formato — el slug debe matchear semánticamente con el contenido del post.
 5. Llená \`visual_variables\` con los campos universales del formato: \`{title, subtitle, body_text, accent, pillar, scene_hint}\`. No todos son obligatorios.
-6. Para carruseles, llená \`slides[]\` con 5 slides en el orden \`cover → content×3 → cta\`. Cada slide tiene \`{index, kind, title, body, visual_hint}\`.
+6. Para carruseles, llená \`slides[]\` con exactamente 5 slides en el orden \`cover → content×3 → cta\`. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. IMPORTANTE: \`index\` empieza en 1 (no en 0). Los valores esperados son 1, 2, 3, 4, 5 — uno por slide en ese orden exacto.
 
 REGLA DURA: respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backticks, sin texto antes o después) con este shape:
 

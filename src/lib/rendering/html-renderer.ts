@@ -57,9 +57,12 @@ export async function renderHtmlToPng(
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: input.width, height: input.height, deviceScaleFactor: 1 });
-    await page.setContent(input.html, { waitUntil: "networkidle0", timeout: 30000 });
-    // Give fonts an extra beat
-    await new Promise((r) => setTimeout(r, 800));
+    // waitUntil: "load" fires when the initial document + subresources referenced
+    // in the HTML are loaded. We don't use "networkidle0" because Google Fonts
+    // requests for weights we may not actually use can hang the idle detection.
+    await page.setContent(input.html, { waitUntil: "load", timeout: 15000 });
+    // Give fonts a generous beat (Google Fonts CSS + font files)
+    await new Promise((r) => setTimeout(r, 1500));
     const screenshot: Buffer = await page.screenshot({ type: "png", omitBackground: false });
 
     const filepath = `${input.tenantSlug}/${input.postId}/${input.filename}`;

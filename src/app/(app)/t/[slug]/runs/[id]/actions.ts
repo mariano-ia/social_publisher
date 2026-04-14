@@ -23,8 +23,18 @@ export async function rejectPost(postId: string): Promise<void> {
 export async function changeTemplate(postId: string, newSlug: string): Promise<void> {
   const post = await getPost(postId);
   if (!post) throw new Error("post not found");
-  await updatePost(postId, { visual_template_slug: newSlug });
+  await updatePost(postId, { visual_template_slug: newSlug, status: "draft" });
   // Re-render with the new template
+  await rerenderPost(postId);
+  revalidatePath("/t");
+}
+
+/**
+ * Retry rendering images for a single post. Used when the initial render
+ * failed (puppeteer timeout, gpt-image-1 error, etc.) but the copy is fine.
+ */
+export async function retryRender(postId: string): Promise<void> {
+  await updatePost(postId, { status: "draft" });
   await rerenderPost(postId);
   revalidatePath("/t");
 }

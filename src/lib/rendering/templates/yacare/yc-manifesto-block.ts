@@ -25,15 +25,17 @@ export function ycManifestoBlock(props: YacareTemplateProps): string {
     <div class="frame">
       <div class="glow-a"></div>
       <div class="glow-b"></div>
+      <div class="corner-shape"></div>
+      <div class="corner-shape-inner"></div>
       <div class="header">
         ${logoTag(props)}
         <div class="tag">Manifiesto</div>
       </div>
-      <div class="spacer"></div>
-      <div class="block-a">${headlineAHtml}</div>
-      <div class="divider"></div>
-      <div class="block-b">${escapeHtml(headlineB)}</div>
-      <div class="spacer"></div>
+      <div class="middle">
+        <div class="block-a">${headlineAHtml}</div>
+        <div class="divider"></div>
+        <div class="block-b">${escapeHtml(headlineB)}</div>
+      </div>
       <div class="footer">
         <div class="slug"><span class="dot"></span>MANIFESTO BLOCK</div>
         <div class="slug">YC · 05</div>

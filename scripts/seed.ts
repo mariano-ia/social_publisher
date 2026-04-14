@@ -109,27 +109,41 @@ async function seedArgo() {
     console.log("  - brand_voice exists");
   }
 
-  // Visual templates
+  // Visual templates — hybrid pipeline: gpt-image-1 for photos, HTML for UI
   await upsertTemplate(tenantId, {
-    slug: "argo-photo-panel-igfeed",
-    format: "ig_feed",
+    slug: "ar-ig-photo",
+    format: "multi",
     engine: "argo_photo_panel",
-    weight: 1,
-    description: "Foto+panel split horizontal 1:1 (gpt-image-1 con STYLE_BASE)",
+    weight: 3,
+    description: "IG feed / LI single con foto editorial gpt-image-1 + panel HTML composited (lavender top, foto+overlay dark, chip naranja, footer violeta). Ideal para escenas deportivas emocionales.",
   });
   await upsertTemplate(tenantId, {
-    slug: "argo-photo-panel-lisingle",
-    format: "li_single",
+    slug: "ar-ig-minimal",
+    format: "multi",
     engine: "argo_photo_panel",
-    weight: 1,
-    description: "Foto+panel split horizontal 3:2 (gpt-image-1 con STYLE_BASE)",
+    weight: 2,
+    description: "IG feed / LI single variante minimalista clara: fondo casi blanco, foto en contenedor rounded con círculos decorativos detrás, chip naranja + headline en negro debajo, línea acento + url. Ideal para contenido más reflexivo/conceptual, mejor legibilidad.",
   });
   await upsertTemplate(tenantId, {
-    slug: "argo-photo-panel-carousel",
+    slug: "ar-solid-violet",
+    format: "multi",
+    engine: "html",
+    weight: 1,
+    description: "IG feed variante B — fondo violeta sólido, sin foto. Para opinión/manifiesto.",
+  });
+  await upsertTemplate(tenantId, {
+    slug: "ar-carousel-content",
     format: "li_carousel_slide",
-    engine: "argo_photo_panel",
+    engine: "html",
+    weight: 2,
+    description: "Slide de contenido de carrusel (2-4). Fondo claro, número deco gigante, línea naranja, título Inter Bold.",
+  });
+  await upsertTemplate(tenantId, {
+    slug: "ar-carousel-cta",
+    format: "li_carousel_slide",
+    engine: "html",
     weight: 1,
-    description: "Foto+panel split vertical 4:5 para slides de carrusel (gpt-image-1)",
+    description: "Slide final de carrusel (5). Fondo violeta sólido, círculos decorativos, botón CTA pill blanco.",
   });
 }
 

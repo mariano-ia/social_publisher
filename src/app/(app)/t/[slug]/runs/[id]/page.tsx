@@ -7,9 +7,10 @@ import {
   getAssetsByPostIds,
   listVisualTemplatesForFormat,
 } from "@/lib/db/queries";
-import type { GeneratedPost, GeneratedAsset, VisualTemplate } from "@/lib/db/types";
+import type { GeneratedPost, GeneratedAsset, VisualTemplate, Tenant } from "@/lib/db/types";
 import { ReviewActions } from "./ReviewActions";
 import { PostCard } from "./PostCard";
+import { AutoRefresh } from "./AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -73,9 +74,16 @@ export default async function RunReviewPage({
       {isGenerating && (
         <div className="card p-8 mb-8 text-center">
           <div className="font-display text-2xl uppercase mb-2">Generando…</div>
-          <div className="text-sm text-[var(--text-dim)] mb-4">
+          <div className="text-sm text-[var(--text-dim)] mb-2">
+            {run.status === "pending" && "Encolando…"}
             {run.status === "generating" && "Claude está escribiendo el copy."}
-            {run.status === "images_pending" && "Renderizando imágenes."}
+            {run.status === "images_pending" &&
+              `Renderizando imágenes · ${assets.length} / ${computeExpectedAssets(posts, tenant)}`}
+          </div>
+          <div className="text-xs text-[var(--text-faint)] mb-4">
+            {computeProgressDetail(posts, assets)} · iniciado{" "}
+            {Math.round((Date.now() - new Date(run.started_at).getTime()) / 1000)}s atrás · auto-refresh
+            cada 3s
           </div>
           <AutoRefresh />
         </div>
@@ -104,12 +112,36 @@ export default async function RunReviewPage({
   );
 }
 
-function AutoRefresh() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `setTimeout(() => window.location.reload(), 3000);`,
-      }}
-    />
-  );
+function computeExpectedAssets(posts: GeneratedPost[], tenant: Tenant): number {
+  // Each single-format post needs 1 image. Each carousel post needs
+  // tenant.cadence.carousel_slides images.
+  let total = 0;
+  for (const p of posts) {
+    if (p.format === "li_carousel") total += tenant.cadence.carousel_slides;
+    else total += 1;
+  }
+  return total || 1;
 }
+
+function computeProgressDetail(posts: GeneratedPost[], assets: GeneratedAsset[]): string {
+  const bySlot = new Map<number, { post: GeneratedPost; count: number; expected: number }>();
+  for (const p of posts) {
+    const expected = p.format === "li_carousel" ? p.slides?.length ?? 5 : 1;
+    bySlot.set(p.slot_order ?? 0, { post: p, count: 0, expected });
+  }
+  for (const a of assets) {
+    const post = posts.find((p) => p.id === a.post_id);
+    if (!post) continue;
+    const entry = bySlot.get(post.slot_order ?? 0);
+    if (entry) entry.count++;
+  }
+  const sorted = [...bySlot.values()].sort((a, b) => (a.post.slot_order ?? 0) - (b.post.slot_order ?? 0));
+  return sorted
+    .map((e) => {
+      const done = e.count >= e.expected;
+      const icon = done ? "✓" : e.count > 0 ? "…" : "·";
+      return `${icon}${e.post.slot_order}`;
+    })
+    .join(" ");
+}
+

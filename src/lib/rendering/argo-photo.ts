@@ -4,62 +4,44 @@ import type { PostFormat, SlideKind } from "@/lib/db/types";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const STYLE_BASE_SINGLE = `Diseño editorial split-layout para publicación de redes sociales. La imagen se divide verticalmente en dos mitades.
+/**
+ * Argo photo generation prompts. These ask gpt-image-1 for PHOTOS ONLY — no
+ * text, no panels, no UI. The HTML template (ar-ig-photo, etc.) composites
+ * the panel + chip + headline over the photo afterwards, so the AI never
+ * has to render text (which it does poorly).
+ *
+ * The style direction targets documentary / editorial photography with natural
+ * imperfections — NOT hyper-polished studio AI aesthetic.
+ */
+const STYLE_BASE_PHOTO_ONLY = `Fotografía editorial documental en color, estilo reportaje deportivo. Reales, no staged.
 
-== MITAD IZQUIERDA (~50%): FOTOGRAFÍA EDITORIAL ==
-SUJETOS: Personas reales — entrenadores deportivos (30-45 años) interactuando con jóvenes deportistas (6-16 años). Contexto deportivo real: cancha, gimnasio, pista, campo de entrenamiento. Interacción auténtica, natural, emocional.
-LUZ: Natural, hora dorada o luz difusa de exterior.
-TEXTO SOBRE LA FOTO: El título del post aparece como cita entre comillas, en blanco, tipografía Inter Bold, tamaño mediano, posicionado en el tercio inferior izquierdo de la foto. Sombra sutil para legibilidad sobre la imagen.
+SUJETOS: entrenadores deportivos (30-50 años) y jóvenes deportistas (6-16 años) en contexto deportivo real — cancha, gimnasio, pista, campo. Interacción auténtica, gestos naturales, expresiones genuinas. NO poses para cámara, NO miradas directas al lente salvo que la escena lo justifique.
 
-== MITAD DERECHA (~50%): PANEL INFORMATIVO OSCURO ==
-Fondo sólido color #1D1D1F (negro casi puro).
+ESTÉTICA DE REFERENCIA: Sports Illustrated feature, National Geographic candid, Annie Leibovitz documentary work. Fotografía de autor, no stock photo. NO aesthetic "AI perfecto" ni "corporate stock".
 
-JERARQUÍA VERTICAL DEL PANEL (de arriba hacia abajo, con espaciado generoso entre cada elemento):
+CÁMARA Y LENTE: 35mm o 50mm f/1.8-f/2.8. Profundidad de campo natural con bokeh suave (no artificial). Enfoque no siempre en el centro de la cara — puede estar en las manos, en la pelota, en un objeto. Composición con REGLA DE TERCIOS, NO sujetos perfectamente centrados.
 
-1. MARCA: "Argo Method" en Inter, tamaño pequeño, color naranja/ámbar (#E8943A). Posición: esquina superior izquierda del panel.
+LUZ: Natural, hora dorada o luz difusa interior real de gimnasio. Sombras reales. Acepta altas luces quemadas o sombras profundas cuando corresponda al momento. NO iluminación de estudio uniforme.
 
-2. CHIP DE CATEGORÍA: Pequeño badge pill-shaped (bordes redondeados completos) con fondo naranja/ámbar (#E8943A) y texto blanco en Inter Bold uppercase, tamaño MUY pequeño (ej: "SCIENCE & METHOD" o "COACHING" o "PRODUCT").
-   IMPORTANTE: El chip debe tener MUCHO MARGEN INFERIOR separándolo del título. Mínimo 20px de espacio vacío entre el chip y el título. El chip NO debe tocar ni pegarse al texto del título.
+IMPERFECCIÓN CONTROLADA: Grano sutil de 35mm, ligero desenfoque en zonas no principales, imperfecciones naturales (una gota de sudor, una cara borrosa al fondo, una pelota desenfocada). La escena tiene que SENTIRSE tomada en el momento, no producida.
 
-3. TÍTULO: El mismo título del post, en Inter Bold, blanco, tamaño grande pero no gigante. Máximo 3-4 líneas. Alineado a la izquierda.
-   IMPORTANTE: Debe haber espacio claro entre el chip de arriba y este título.
+COLOR: Rendimiento de color natural, NO saturado. Tonos cálidos sutiles. NO look Instagram filter, NO HDR.
 
-4. SUBTÍTULO: Una línea descriptiva corta en Inter Regular, color gris (#86868B), tamaño pequeño. Separado del título por un espacio visible.
+COMPOSICIÓN: Puede haber elementos en los bordes que se "cortan" naturalmente. NO composición perfecta de revista. Respetar la regla de tercios y dejar "aire negativo" donde el texto HTML se va a superponer después.
 
-5. CTA BUTTON: En la parte inferior del panel, un botón pill-shaped (bordes redondeados completos) con fondo púrpura degradado (#955FB5 a #b07dd4), ancho completo del panel (con márgenes laterales). Texto "argomethod.com" en Inter Medium, blanco, centrado.
+PROHIBIDO ABSOLUTO:
+- NADA de texto en la imagen (ni palabras, ni letras, ni logos, ni números, ni subtítulos)
+- NADA de elementos gráficos UI (ni chips, ni pills, ni botones, ni cajas de texto)
+- NADA de logos o marcas inventadas
+- NO iconos, veleros, anclas, timones, gráficos decorativos
+- NO frames, bordes o marcos alrededor de la imagen
+- La imagen es SOLO la fotografía. Toda la UI se agrega después en código.`;
 
-ESPACIADO: Cada elemento tiene espacio generoso entre sí. Nada se toca. Nada se superpone. El panel debe respirar.
+const PHOTO_FRAMING_SINGLE_IG = `FRAMING: formato cuadrado 1:1. Sujetos principales en la mitad inferior del frame para dejar aire negativo arriba donde irá el header. Composición con mucho "breathing room" alrededor.`;
 
-BORDE: Una línea fina naranja/ámbar (#E8943A) en el borde superior del panel oscuro, separando foto de panel.
+const PHOTO_FRAMING_SINGLE_LI = `FRAMING: formato horizontal 3:2. Sujetos desplazados hacia la izquierda del frame con el 30% derecho relativamente vacío (paisaje deportivo, fondo difuminado) para que el panel HTML se pueda superponer a la derecha.`;
 
-PROHIBIDO: No incluir logos gráficos, escudos, marcas inventadas, iconos decorativos, veleros, anclas, timones, ilustraciones. Ninguna tipografía que no sea Inter. No poner elementos del panel sobre la fotografía ni viceversa.`;
-
-const STYLE_BASE_CAROUSEL = `Diseño editorial vertical 4:5 (formato carrusel LinkedIn) para publicación de redes sociales. La imagen se divide HORIZONTALMENTE en dos zonas.
-
-== MITAD SUPERIOR (~55%): FOTOGRAFÍA EDITORIAL ==
-SUJETOS: Personas reales — entrenadores deportivos (30-45 años) interactuando con jóvenes deportistas (6-16 años). Contexto deportivo real: cancha, gimnasio, pista, campo de entrenamiento. Interacción auténtica, natural, emocional.
-LUZ: Natural, hora dorada o luz difusa de exterior.
-
-== MITAD INFERIOR (~45%): PANEL INFORMATIVO OSCURO ==
-Fondo sólido color #1D1D1F (negro casi puro).
-
-JERARQUÍA DEL PANEL (top a bottom, con espaciado generoso):
-
-1. MARCA: "Argo Method" en Inter, tamaño pequeño, color naranja/ámbar (#E8943A). Esquina superior izquierda del panel.
-
-2. CHIP DE CATEGORÍA: Badge pill con fondo #E8943A, texto blanco Inter Bold uppercase MUY pequeño. Mínimo 20px de margen inferior antes del título.
-
-3. TÍTULO DEL SLIDE: Inter Bold blanco, tamaño grande, máximo 3 líneas, alineado a la izquierda.
-
-4. BODY DEL SLIDE: Inter Regular gris (#86868B), 1-2 líneas, separado del título.
-
-5. INDICADOR DE SLIDE: En el borde inferior derecho del panel, en Inter Medium gris pequeño, formato "01 / 05" o similar.
-
-BORDE SUPERIOR del panel: Línea fina naranja/ámbar (#E8943A) horizontal separando foto de panel.
-
-PROHIBIDO: No logos, no escudos, no marcas inventadas, no iconos decorativos, no veleros/anclas/timones. Solo Inter como tipografía.`;
-
-const STYLE_CAROUSEL_CTA = `Variante CTA del carrusel: en lugar del body de texto, el panel inferior contiene un botón pill-shaped GRANDE con fondo púrpura degradado (#955FB5 a #b07dd4), ancho casi completo del panel, texto "argomethod.com" en Inter Medium blanco centrado. Sobre el botón, un título corto de cierre invitando a la acción.`;
+const PHOTO_FRAMING_CAROUSEL_COVER = `FRAMING: formato vertical 4:5. Composición que tenga el sujeto principal en el tercio superior del frame, dejando los dos tercios inferiores con "breathing room" (fondo difuminado, paisaje deportivo, piso, grass). Ese espacio inferior se cubrirá con un overlay oscuro y el titular HTML superpuesto.`;
 
 const PILLAR_CONTEXT: Record<string, string> = {
   ciencia_metodologia:
@@ -87,7 +69,11 @@ interface RenderArgoSingleInput {
   postId: string;
 }
 
-export async function renderArgoSingle(input: RenderArgoSingleInput): Promise<{
+/**
+ * Generates a photo-only image (no text, no UI) for an Argo single post.
+ * The HTML template then composites the panel + headline over it.
+ */
+export async function renderArgoSinglePhoto(input: RenderArgoSingleInput): Promise<{
   publicUrl: string;
   storagePath: string;
   promptUsed: string;
@@ -96,17 +82,25 @@ export async function renderArgoSingle(input: RenderArgoSingleInput): Promise<{
 }> {
   const dims = FORMAT_DIMENSIONS[input.format];
   const pillarHint = input.pillar ? PILLAR_CONTEXT[input.pillar] ?? "" : "";
+  const framing = input.format === "ig_feed" ? PHOTO_FRAMING_SINGLE_IG : PHOTO_FRAMING_SINGLE_LI;
 
-  const fullPrompt = `${STYLE_BASE_SINGLE}
+  const fullPrompt = `${STYLE_BASE_PHOTO_ONLY}
 
-Formato: ${dims.aspect}.
-Texto del título sobre la imagen: "${input.title}"
-${input.subtitle ? `Subtítulo: "${input.subtitle}"` : ""}
-${pillarHint ? `Contexto del pilar: ${pillarHint}` : ""}
-${input.scene_hint ? `Indicaciones adicionales de escena: ${input.scene_hint}` : ""}`;
+${framing}
+
+${pillarHint ? `CONTEXTO DE ESCENA según el pilar de contenido: ${pillarHint}` : ""}
+${input.scene_hint ? `DETALLES ADICIONALES DE LA ESCENA: ${input.scene_hint}` : ""}
+
+RECORDATORIO FINAL: La imagen es SOLO FOTOGRAFÍA. Cero texto, cero UI, cero logos. El diseño gráfico se compone después en código HTML sobre esta foto.`;
 
   return await callGptImageAndUpload(fullPrompt, dims.size, input.tenantSlug, input.postId, "single");
 }
+
+/**
+ * Legacy alias for renderArgoSingle — keeps the old name working for
+ * orchestrator code that still calls it. Prefer renderArgoSinglePhoto.
+ */
+export const renderArgoSingle = renderArgoSinglePhoto;
 
 interface RenderArgoCarouselSlideInput {
   slideIndex: number;
@@ -119,22 +113,25 @@ interface RenderArgoCarouselSlideInput {
   postId: string;
 }
 
-export async function renderArgoCarouselSlide(
+/**
+ * Generates a photo-only image for the COVER slide of an Argo carousel.
+ * Only slide.kind === "cover" uses this — content and cta slides are pure
+ * HTML→PNG and don't call gpt-image-1 at all.
+ */
+export async function renderArgoCarouselCoverPhoto(
   input: RenderArgoCarouselSlideInput,
 ): Promise<{ publicUrl: string; storagePath: string; promptUsed: string; width: number; height: number }> {
   const dims = FORMAT_DIMENSIONS.carousel_slide;
   const pillarHint = input.pillar ? PILLAR_CONTEXT[input.pillar] ?? "" : "";
-  const ctaVariant = input.slideKind === "cta" ? `\n\n${STYLE_CAROUSEL_CTA}` : "";
 
-  const fullPrompt = `${STYLE_BASE_CAROUSEL}${ctaVariant}
+  const fullPrompt = `${STYLE_BASE_PHOTO_ONLY}
 
-Formato: ${dims.aspect}.
-Slide ${input.slideIndex} de 5 (${input.slideKind}).
-Indicador de slide visible en el panel: "${String(input.slideIndex).padStart(2, "0")} / 05"
-Título del slide: "${input.slideTitle}"
-${input.slideBody ? `Body del slide: "${input.slideBody}"` : ""}
-${pillarHint ? `Contexto del pilar para la fotografía: ${pillarHint}` : ""}
-${input.scene_hint ? `Indicaciones adicionales: ${input.scene_hint}` : ""}`;
+${PHOTO_FRAMING_CAROUSEL_COVER}
+
+${pillarHint ? `CONTEXTO DE ESCENA según el pilar de contenido: ${pillarHint}` : ""}
+${input.scene_hint ? `DETALLES ADICIONALES DE LA ESCENA: ${input.scene_hint}` : ""}
+
+RECORDATORIO FINAL: La imagen es SOLO FOTOGRAFÍA. Cero texto, cero UI, cero logos. El título del carrusel y los elementos gráficos se agregan después en HTML.`;
 
   return await callGptImageAndUpload(
     fullPrompt,
@@ -145,6 +142,12 @@ ${input.scene_hint ? `Indicaciones adicionales: ${input.scene_hint}` : ""}`;
     input.slideIndex,
   );
 }
+
+/**
+ * Legacy alias. The old orchestrator called renderArgoCarouselSlide for every
+ * slide. Now only the cover calls the photo pipeline — content/cta are HTML.
+ */
+export const renderArgoCarouselSlide = renderArgoCarouselCoverPhoto;
 
 async function callGptImageAndUpload(
   prompt: string,
