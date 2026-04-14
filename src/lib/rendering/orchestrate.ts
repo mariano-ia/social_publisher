@@ -19,7 +19,7 @@ import { composeSystemPrompt } from "@/lib/prompts/compose";
 import { generateBatch } from "@/lib/generator";
 import type { GeneratedPostInput } from "@/lib/generator/schema";
 import { renderArgoSinglePhoto, renderArgoCarouselCoverPhoto } from "./argo-photo";
-import { renderHtmlToPng } from "./html-renderer";
+import { renderHtmlToPng, prewarmBrowser, teardownBrowser } from "./html-renderer";
 import { getHtmlTemplate, FORMAT_DIMS } from "./template-registry";
 
 interface RunOrchestrationInput {
@@ -129,8 +129,19 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
 
   await updateRun(runId, { status: "images_pending" });
 
+  // Pre-warm the shared browser BEFORE workers start, so concurrent workers
+  // all hit the cached browser instead of racing on a fresh chromium launch
+  // (which caused "spawn ETXTBSY" in production).
+  await prewarmBrowser();
+
   // Render images in parallel with concurrency limit of 3
-  await renderAllImages(tenant, insertedPosts);
+  try {
+    await renderAllImages(tenant, insertedPosts);
+  } finally {
+    // Release the browser explicitly so we don't hold chromium open after the
+    // run ends. Safe to call from the finally block — teardown is idempotent.
+    await teardownBrowser();
+  }
 
   await updateRun(runId, { status: "ready_for_review", completed_at: new Date().toISOString() });
 

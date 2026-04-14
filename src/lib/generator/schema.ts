@@ -14,18 +14,23 @@ export const SlideSchema = z.object({
   visual_hint: z.string().nullish(),
 });
 
-// Single post schema. Tolerant of Claude returning null for optional fields.
+// Single post schema. Tolerant of Claude returning null or omitting optional
+// fields. The only truly required fields are the ones without which we can't
+// render anything: slot_order, format, title, copy. Everything else has
+// either a default, a fallback, or gets filled in by the orchestrator.
 export const GeneratedPostSchema = z
   .object({
     slot_order: z.number().int().min(1).max(8),
     format: z.enum(["ig_feed", "li_single", "li_carousel"]),
-    pillar: z.string().min(1),
-    topic: z.string().min(1),
     title: z.string().min(1),
     copy: z.string().min(1),
+    pillar: z.string().nullish().transform((v) => v ?? ""),
+    topic: z.string().nullish().transform((v) => v ?? ""),
     hashtags: z.array(z.string()).nullish().transform((v) => v ?? []),
     cta: z.string().nullish(),
-    visual_template_slug: z.string().min(1),
+    // If Claude omits the slug, the orchestrator picks one via round-robin
+    // from available templates for that format.
+    visual_template_slug: z.string().nullish(),
     visual_variables: z.record(z.string(), z.unknown()).nullish().transform((v) => v ?? {}),
     slides: z.array(SlideSchema).nullish(),
   })
