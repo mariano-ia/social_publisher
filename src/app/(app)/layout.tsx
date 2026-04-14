@@ -3,11 +3,13 @@ import { listTenants } from "@/lib/db/queries";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Icon } from "@/components/Icons";
+import { TenantSidebarList } from "@/components/TenantSidebarList";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const tenants = await listTenants();
+  const initialTenants = tenants.map((t) => ({ id: t.id, slug: t.slug, name: t.name }));
 
   return (
     <div className="min-h-screen flex">
@@ -25,21 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-faint)] font-semibold mb-3 px-3">
             Cuentas
           </div>
-          <div className="flex flex-col gap-0.5">
-            {tenants.map((t) => (
-              <Link
-                key={t.id}
-                href={`/t/${t.slug}`}
-                className="text-sm py-2.5 px-3 rounded-lg hover:bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-3 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-                <span className="truncate">{t.name}</span>
-              </Link>
-            ))}
-            {tenants.length === 0 && (
-              <span className="text-xs text-[var(--text-faint)] px-3 py-2">Todavía no hay cuentas.</span>
-            )}
-          </div>
+          <TenantSidebarList initialTenants={initialTenants} />
         </div>
 
         <div className="mt-auto flex items-center justify-between pt-4 border-t border-[var(--border)]">

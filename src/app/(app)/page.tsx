@@ -19,8 +19,8 @@ export default async function DashboardPage() {
           Generá contenido
         </h1>
         <p className="text-[var(--text-dim)] text-lg max-w-xl">
-          Elegí una cuenta para crear una tanda o generar un post puntual. Cada cuenta tiene su propia
-          voz, tono y sistema visual.
+          Elegí una cuenta para crear un batch de contenido o generar un post puntual. Cada cuenta
+          tiene su propia voz, tono y sistema visual.
         </p>
       </div>
 
