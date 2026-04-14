@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { jsonrepair } from "jsonrepair";
 import { BatchResponseSchema, SingleIdeaResponseSchema, type BatchResponse } from "./schema";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -91,20 +92,48 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
   throw new Error("Unreachable");
 }
 
+/**
+ * Parse Claude's response as JSON, with escalating recovery strategies:
+ *   1. Direct JSON.parse after stripping markdown fences.
+ *   2. Slice from first `{` to last `}` and parse again.
+ *   3. Run jsonrepair on the slice — fixes unescaped quotes, missing
+ *      commas, trailing commas, single quotes, raw newlines inside
+ *      strings, etc. These are the common LLM JSON failure modes.
+ */
 function extractJson(text: string): unknown {
-  // Strip possible markdown fences
   const cleaned = text
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/```\s*$/i, "")
     .trim();
+
+  // Attempt 1: straight parse
   try {
     return JSON.parse(cleaned);
   } catch {
-    // Try to find first { ... last }
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start === -1 || end === -1) throw new Error("Claude response did not contain JSON");
-    return JSON.parse(cleaned.slice(start, end + 1));
+    /* fall through */
+  }
+
+  // Attempt 2: slice from first { to last }
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    throw new Error("Claude response did not contain JSON");
+  }
+  const sliced = cleaned.slice(start, end + 1);
+  try {
+    return JSON.parse(sliced);
+  } catch {
+    /* fall through */
+  }
+
+  // Attempt 3: repair common LLM JSON mistakes
+  try {
+    const repaired = jsonrepair(sliced);
+    return JSON.parse(repaired);
+  } catch (err) {
+    throw new Error(
+      `Unable to parse Claude response as JSON even after repair: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

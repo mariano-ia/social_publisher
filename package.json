@@ -16,6 +16,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@sparticuz/chromium-min": "^147.0.0",
     "@supabase/supabase-js": "^2.99.0",
+    "jsonrepair": "^3.13.3",
     "jszip": "^3.10.1",
     "next": "^15.2.0",
     "openai": "^4.85.0",
