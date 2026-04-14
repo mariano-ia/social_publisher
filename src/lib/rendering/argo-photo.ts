@@ -6,36 +6,44 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Argo photo generation prompts. These ask gpt-image-1 for PHOTOS ONLY — no
- * text, no panels, no UI. The HTML template (ar-ig-photo, etc.) composites
- * the panel + chip + headline over the photo afterwards, so the AI never
- * has to render text (which it does poorly).
+ * text, no panels, no UI. The HTML template composites the panel + chip +
+ * headline over the photo afterwards, so the AI never has to render text
+ * (which it does poorly).
  *
  * The style direction targets documentary / editorial photography with natural
  * imperfections — NOT hyper-polished studio AI aesthetic.
+ *
+ * IMPORTANT: Avoid age-specific descriptors ("niños", "jóvenes de X años")
+ * which trigger OpenAI's moderation safety system. We use "estudiantes",
+ * "atletas amateurs", "jugadores" as neutral terms.
  */
-const STYLE_BASE_PHOTO_ONLY = `Fotografía editorial documental en color, estilo reportaje deportivo. Reales, no staged.
+const STYLE_BASE_PHOTO_ONLY = `Fotografía editorial documental en color, estilo reportaje deportivo.
 
-SUJETOS: entrenadores deportivos (30-50 años) y jóvenes deportistas (6-16 años) en contexto deportivo real — cancha, gimnasio, pista, campo. Interacción auténtica, gestos naturales, expresiones genuinas. NO poses para cámara, NO miradas directas al lente salvo que la escena lo justifique.
+CONTEXTO: escenas de entrenamiento y actividad deportiva en instituciones educativas o clubes amateurs. Los sujetos son atletas amateurs y sus entrenadores, en un contexto formal deportivo de club o escuela. La escena ocurre en espacios deportivos reales — cancha, gimnasio, pista, campo de entrenamiento.
 
-ESTÉTICA DE REFERENCIA: Sports Illustrated feature, National Geographic candid, Annie Leibovitz documentary work. Fotografía de autor, no stock photo. NO aesthetic "AI perfecto" ni "corporate stock".
+ENFOQUE NARRATIVO: interacción profesional entre entrenador y atleta durante una actividad deportiva. Gestos naturales de enseñanza, demostración técnica, conversación sobre una jugada, análisis de movimiento. El momento capturado es una situación de aprendizaje deportivo real, no una pose ni un retrato.
 
-CÁMARA Y LENTE: 35mm o 50mm f/1.8-f/2.8. Profundidad de campo natural con bokeh suave (no artificial). Enfoque no siempre en el centro de la cara — puede estar en las manos, en la pelota, en un objeto. Composición con REGLA DE TERCIOS, NO sujetos perfectamente centrados.
+ESTÉTICA: Sports Illustrated feature photography, fotoperiodismo deportivo, editorial documentary. Calidad de autor, no stock photo, no corporate image, no "AI polished" aesthetic.
 
-LUZ: Natural, hora dorada o luz difusa interior real de gimnasio. Sombras reales. Acepta altas luces quemadas o sombras profundas cuando corresponda al momento. NO iluminación de estudio uniforme.
+CÁMARA Y LENTE: 35mm o 50mm a f/1.8-2.8. Profundidad de campo natural con bokeh suave orgánico. Composición con regla de tercios — el sujeto principal NO va centrado, sino desplazado al primer o segundo tercio del cuadro. Enfoque puede estar en las manos, en el equipamiento, en un objeto del entorno, no siempre en el rostro.
 
-IMPERFECCIÓN CONTROLADA: Grano sutil de 35mm, ligero desenfoque en zonas no principales, imperfecciones naturales (una gota de sudor, una cara borrosa al fondo, una pelota desenfocada). La escena tiene que SENTIRSE tomada en el momento, no producida.
+LUZ: natural, de ambiente deportivo real. Luz difusa de gimnasio, luz lateral de exterior, hora dorada de entrenamiento de tarde. Sombras naturales. NO iluminación uniforme de estudio. Acepta zonas un poco oscuras o luces un poco quemadas si corresponde al momento.
 
-COLOR: Rendimiento de color natural, NO saturado. Tonos cálidos sutiles. NO look Instagram filter, NO HDR.
+IMPERFECCIÓN REAL: grano sutil tipo 35mm film, ligero desenfoque de movimiento en zonas no principales, detalles ambientales que no son perfectos (una botella de agua en el piso, una toalla, una línea de cancha desgastada). La imagen tiene que sentirse tomada en el momento, no producida en estudio.
 
-COMPOSICIÓN: Puede haber elementos en los bordes que se "cortan" naturalmente. NO composición perfecta de revista. Respetar la regla de tercios y dejar "aire negativo" donde el texto HTML se va a superponer después.
+COLOR: rendering natural con tonos cálidos sutiles. NO saturación aumentada, NO look Instagram filter, NO HDR. Aspecto similar a papel fotográfico impreso de revista deportiva.
+
+COMPOSICIÓN: elementos en los bordes pueden recortarse naturalmente — no todo tiene que estar perfectamente encuadrado. Dejar "aire negativo" (zonas más lisas, fondo difuminado, piso, pared) donde el texto HTML se va a superponer después.
 
 PROHIBIDO ABSOLUTO:
-- NADA de texto en la imagen (ni palabras, ni letras, ni logos, ni números, ni subtítulos)
-- NADA de elementos gráficos UI (ni chips, ni pills, ni botones, ni cajas de texto)
-- NADA de logos o marcas inventadas
-- NO iconos, veleros, anclas, timones, gráficos decorativos
-- NO frames, bordes o marcos alrededor de la imagen
-- La imagen es SOLO la fotografía. Toda la UI se agrega después en código.`;
+- NADA de texto visible en la imagen (ni palabras, ni letras, ni logos, ni números, ni carteles)
+- NADA de elementos gráficos tipo UI (chips, pills, botones, cajas, overlays)
+- NADA de logos o marcas deportivas reales inventadas
+- NO iconos, ni gráficos decorativos, ni ilustraciones
+- NO marcos, ni bordes, ni frames alrededor de la imagen
+- NO escenas competitivas agresivas o físicas (sin tackles duros, sin contacto violento)
+
+La imagen es SOLO la fotografía editorial. Toda la UI se agrega después en código.`;
 
 const PHOTO_FRAMING_SINGLE_IG = `FRAMING: formato cuadrado 1:1. Sujetos principales en la mitad inferior del frame para dejar aire negativo arriba donde irá el header. Composición con mucho "breathing room" alrededor.`;
 
@@ -45,11 +53,11 @@ const PHOTO_FRAMING_CAROUSEL_COVER = `FRAMING: formato vertical 4:5. Composició
 
 const PILLAR_CONTEXT: Record<string, string> = {
   ciencia_metodologia:
-    "Escena de interacción cercana 1:1 entre un entrenador y un deportista joven. Momento de conversación, conexión visual directa. Tono serio pero cálido.",
+    "Escena de conversación profesional 1:1 entre entrenador y atleta amateur. Momento de análisis técnico o explicación de un concepto. Tono serio y profesional.",
   educacion_deportiva:
-    "Grupo de jóvenes deportistas entrenando con el entrenador guiando la actividad. Acción deportiva con presencia del adulto. Energía y movimiento.",
+    "Grupo de atletas amateurs en sesión de entrenamiento con el coach guiando la actividad. Demostración técnica, corrección de postura, momento didáctico. Energía controlada.",
   producto:
-    "Entrenador mirando un tablet o documento junto a un deportista joven. Momento de análisis o descubrimiento. Foco en el concepto de información que transforma.",
+    "Entrenador observando un tablet o cuaderno técnico junto a un atleta amateur. Momento de revisión de resultados, análisis de performance, lectura de información.",
 };
 
 const FORMAT_DIMENSIONS: Record<PostFormat | "carousel_slide", { size: "1024x1024" | "1024x1536" | "1536x1024"; aspect: string }> = {

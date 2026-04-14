@@ -12,6 +12,12 @@ interface RenderHtmlInput {
 let chromiumPromise: Promise<unknown> | null = null;
 let puppeteerPromise: Promise<unknown> | null = null;
 
+// Remote chromium tarball for @sparticuz/chromium-min. Must match the
+// package version installed in package.json. This gets downloaded and cached
+// on the first cold start of a Vercel serverless function.
+const CHROMIUM_TARBALL_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar";
+
 // Minimal interface we need from a puppeteer Browser/Page so this file
 // doesn't depend on the full puppeteer types (they pull in heavy deps).
 interface MinimalPage {
@@ -25,20 +31,25 @@ interface MinimalBrowser {
 }
 
 async function getBrowser(): Promise<MinimalBrowser> {
-  if (!chromiumPromise) chromiumPromise = import("@sparticuz/chromium");
+  if (!chromiumPromise) chromiumPromise = import("@sparticuz/chromium-min");
   if (!puppeteerPromise) puppeteerPromise = import("puppeteer-core");
   const [chromium, puppeteer] = await Promise.all([chromiumPromise, puppeteerPromise]);
 
   const chromiumModule = (chromium as { default?: unknown }).default ?? chromium;
   const puppeteerModule = (puppeteer as { default?: unknown }).default ?? puppeteer;
-  const cm = chromiumModule as { executablePath: () => Promise<string>; args: string[] };
+  // chromium-min's executablePath(url) downloads and extracts the binary
+  // from the tarball URL on first call, caches it, and returns the local path.
+  const cm = chromiumModule as {
+    executablePath: (url?: string) => Promise<string>;
+    args: string[];
+  };
   const pm = puppeteerModule as {
     launch: (opts: Record<string, unknown>) => Promise<MinimalBrowser>;
   };
 
   const isVercel = !!process.env.VERCEL;
   const executablePath = isVercel
-    ? await cm.executablePath()
+    ? await cm.executablePath(CHROMIUM_TARBALL_URL)
     : process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
   const browser = await pm.launch({
