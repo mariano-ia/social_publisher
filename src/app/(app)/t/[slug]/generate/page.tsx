@@ -6,6 +6,9 @@ import type { PostFormat } from "@/lib/db/types";
 import { Icon } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
+// Server actions in this page call startRun → orchestrator needs up to 5 min
+// of after() processing time (Vercel Pro max).
+export const maxDuration = 300;
 
 export default async function GeneratePage({
   params,

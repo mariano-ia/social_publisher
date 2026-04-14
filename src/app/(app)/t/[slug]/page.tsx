@@ -6,6 +6,10 @@ import { Icon } from "@/components/Icons";
 import { cadenceHumanDescription, engineLabel, statusLabel, archetypeLabel } from "@/lib/display";
 
 export const dynamic = "force-dynamic";
+// Allow the server action on this page (handleGenerateBatch) to keep running
+// up to 5 minutes on Vercel Pro — that's what the background orchestrator
+// needs for an Argo batch (Claude + 8 gpt-image-1 calls + HTML renders).
+export const maxDuration = 300;
 
 export default async function TenantHomePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

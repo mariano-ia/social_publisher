@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import {
   getActiveVoiceVersion,
   getRecentPostsForAntiRepeat,
@@ -42,10 +43,21 @@ export async function startRun(input: RunOrchestrationInput): Promise<string> {
     manual_idea_id: input.manualIdea?.id ?? null,
   });
 
-  // Fire-and-forget the actual work
-  void executeRun(run.id, input).catch(async (err) => {
-    console.error("[orchestrate] run failed", err);
-    await updateRun(run.id, { status: "failed", error: String(err?.message ?? err) }).catch(() => {});
+  // On Vercel serverless, a plain `void executeRun(...)` promise would be
+  // abandoned when the HTTP response is sent (the function container is
+  // reaped). next/server's `after()` explicitly tells the platform to keep
+  // the function alive until this promise resolves, up to maxDuration (set
+  // to 300s on the calling page/action via `export const maxDuration`).
+  after(async () => {
+    try {
+      await executeRun(run.id, input);
+    } catch (err) {
+      console.error("[orchestrate] run failed", err);
+      await updateRun(run.id, {
+        status: "failed",
+        error: String(err instanceof Error ? err.message : err),
+      }).catch(() => {});
+    }
   });
 
   return run.id;
