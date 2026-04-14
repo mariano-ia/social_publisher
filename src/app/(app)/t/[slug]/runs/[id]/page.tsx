@@ -68,8 +68,12 @@ export default async function RunReviewPage({
           >
             ← {tenant.name}
           </Link>
-          <h1 className="font-display text-5xl uppercase tracking-tight mt-3">
-            {run.mode === "batch" ? "Tanda completa" : "Post individual"}
+          <div className="chip mt-3 mb-3">
+            <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+            {run.mode === "batch" ? "Generación completa" : "Post individual"}
+          </div>
+          <h1 className="font-display text-5xl uppercase tracking-tight">
+            Contenido generado
           </h1>
           <div className="text-sm text-[var(--text-dim)] mt-2">
             {new Date(run.created_at).toLocaleString("es-AR", {
@@ -78,6 +82,8 @@ export default async function RunReviewPage({
               hour: "2-digit",
               minute: "2-digit",
             })}
+            {" · "}
+            {posts.length} {posts.length === 1 ? "pieza" : "piezas"}
             {" · "}
             <code className="text-xs text-[var(--text-faint)]">{run.id.slice(0, 8)}</code>
           </div>

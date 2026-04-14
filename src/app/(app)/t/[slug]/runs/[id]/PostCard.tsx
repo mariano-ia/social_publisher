@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { GeneratedPost, GeneratedAsset, VisualTemplate } from "@/lib/db/types";
 import { approvePost, rejectPost, changeTemplate, retryRender } from "./actions";
+import { Icon } from "@/components/Icons";
+import { formatLabel, formatPlatform, pillarLabel } from "@/lib/display";
 
 interface Props {
   post: GeneratedPost;
@@ -11,11 +14,13 @@ interface Props {
 }
 
 export function PostCard({ post, assets, availableTemplates }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [status, setStatus] = useState(post.status);
   const [currentTemplate, setCurrentTemplate] = useState(post.visual_template_slug ?? "");
   const [copiedFlash, setCopiedFlash] = useState(false);
+  const [showCopy, setShowCopy] = useState(false);
 
   const isCarousel = post.format === "li_carousel";
   const slides = assets
@@ -26,6 +31,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
   const currentAsset = isCarousel ? slides[currentSlide] : single;
   const imageFailed = status === "image_failed" || assets.length === 0;
 
+  const platform = formatPlatform(post.format);
   const copyText = buildCopyText(post);
 
   const handleCopy = async () => {
@@ -34,7 +40,6 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
       setCopiedFlash(true);
       setTimeout(() => setCopiedFlash(false), 1500);
     } catch {
-      // Fallback: select the textarea
       const ta = document.getElementById(`copy-${post.id}`) as HTMLTextAreaElement | null;
       if (ta) {
         ta.select();
@@ -47,12 +52,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
 
   const handleDownloadImage = async () => {
     if (!currentAsset) return;
-    const slug = (post.topic ?? post.title ?? "post")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .slice(0, 40);
+    const slug = toSlug(post.topic ?? post.title ?? "post");
     const suffix = isCarousel
       ? `-slide-${String(currentAsset.slide_index ?? currentSlide + 1).padStart(2, "0")}`
       : "";
@@ -70,19 +70,12 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
       URL.revokeObjectURL(objUrl);
     } catch (e) {
       console.error("download failed", e);
-      // Fallback: open in new tab so user can right-click save
       window.open(currentAsset.public_url, "_blank");
     }
   };
 
   const handleDownloadAllSlides = async () => {
-    // For carousels: download each slide sequentially (browser handles 5 downloads)
-    const slug = (post.topic ?? post.title ?? "post")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .slice(0, 40);
+    const slug = toSlug(post.topic ?? post.title ?? "post");
     for (const asset of slides) {
       try {
         const res = await fetch(asset.public_url);
@@ -102,9 +95,40 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
     }
   };
 
+  const handleChangeTemplate = (slug: string) => {
+    setCurrentTemplate(slug);
+    startTransition(async () => {
+      await changeTemplate(post.id, slug);
+      router.refresh();
+    });
+  };
+
+  const handleRetryRender = () => {
+    startTransition(async () => {
+      await retryRender(post.id);
+      router.refresh();
+    });
+  };
+
+  const handleApprove = () => {
+    startTransition(async () => {
+      await approvePost(post.id);
+      setStatus("approved");
+      router.refresh();
+    });
+  };
+
+  const handleReject = () => {
+    startTransition(async () => {
+      await rejectPost(post.id);
+      setStatus("rejected");
+      router.refresh();
+    });
+  };
+
   return (
     <div
-      className={`card overflow-hidden flex flex-col ${
+      className={`card overflow-hidden flex flex-col group ${
         status === "approved"
           ? "border-[var(--success)]"
           : status === "rejected"
@@ -114,6 +138,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
               : ""
       }`}
     >
+      {/* Image area */}
       <div className="relative bg-black aspect-square flex items-center justify-center overflow-hidden">
         {currentAsset ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -124,138 +149,199 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
           />
         ) : (
           <div className="text-center px-4">
-            <div className="text-[var(--text-faint)] text-xs uppercase tracking-widest mb-3">
-              {imageFailed ? "imagen falló" : "sin imagen"}
+            <div className="text-[var(--text-faint)] text-xs uppercase tracking-[0.18em] mb-3 font-semibold">
+              {imageFailed ? "Imagen pendiente" : "Generando…"}
             </div>
             <button
-              onClick={() => {
-                startTransition(async () => {
-                  await retryRender(post.id);
-                });
-              }}
+              onClick={handleRetryRender}
               disabled={pending}
-              className="btn btn-secondary text-xs"
+              className="btn btn-secondary btn-sm"
             >
-              {pending ? "Reintentando…" : "↻ Regenerar imagen"}
+              <Icon.Refresh size={14} />
+              {pending ? "Reintentando" : "Reintentar"}
             </button>
           </div>
         )}
 
+        {/* Carousel dots */}
         {isCarousel && slides.length > 0 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`w-2 h-2 rounded-full ${i === currentSlide ? "bg-white" : "bg-white/30"}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === currentSlide ? "bg-white w-6" : "bg-white/30 w-1.5"
+                }`}
               />
             ))}
           </div>
         )}
+
+        {/* Platform chip top-left */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 py-1 px-2 rounded-md bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold uppercase tracking-[0.08em]">
+          {platform === "instagram" && <Icon.Instagram size={12} />}
+          {platform === "linkedin" && <Icon.LinkedIn size={12} />}
+          {formatLabel(post.format)}
+        </div>
       </div>
 
+      {/* Content area */}
       <div className="p-5 flex flex-col gap-3 flex-1">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-[10px] uppercase tracking-widest font-semibold py-1 px-2 rounded-full bg-[var(--bg-surface)] text-[var(--text-dim)]">
-            {post.format}
-          </span>
-          {post.pillar && (
-            <span className="text-[10px] uppercase tracking-widest font-semibold py-1 px-2 rounded-full text-[var(--accent)]">
-              {post.pillar}
-            </span>
-          )}
-        </div>
+        {/* Pillar chip */}
+        {post.pillar && (
+          <div className="flex">
+            <span className="chip chip-accent">{pillarLabel(post.pillar)}</span>
+          </div>
+        )}
 
-        {post.title && <h3 className="font-display text-xl uppercase leading-tight">{post.title}</h3>}
+        {/* Title */}
+        {post.title && (
+          <h3 className="font-display text-xl uppercase leading-tight tracking-tight">
+            {post.title}
+          </h3>
+        )}
 
-        <details className="text-xs text-[var(--text-dim)]">
-          <summary className="cursor-pointer text-[var(--accent)] font-semibold uppercase tracking-widest text-[10px] mb-2 select-none">
-            Ver copy completo
-          </summary>
+        {/* Expand copy */}
+        <button
+          onClick={() => setShowCopy(!showCopy)}
+          className="text-xs text-[var(--text-dim)] hover:text-[var(--text)] text-left font-semibold uppercase tracking-[0.14em] flex items-center gap-1.5"
+        >
+          <Icon.ChevronRight size={12} className={showCopy ? "rotate-90 transition-transform" : "transition-transform"} />
+          Ver copy completo
+        </button>
+        {showCopy && (
           <textarea
             id={`copy-${post.id}`}
             readOnly
             value={copyText}
-            className="w-full mt-2 font-mono text-[11px] leading-relaxed"
-            rows={Math.min(18, copyText.split("\n").length + 2)}
+            rows={Math.min(14, copyText.split("\n").length + 2)}
+            className="w-full font-mono text-[11px] leading-relaxed"
             onFocus={(e) => e.target.select()}
           />
-        </details>
+        )}
 
-        <button onClick={handleCopy} className="btn btn-secondary text-xs">
-          {copiedFlash ? "✓ Copiado" : "📋 Copiar texto (título + copy + CTA + hashtags)"}
-        </button>
-
-        {currentAsset && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleDownloadImage}
-              className="btn btn-secondary text-xs flex-1"
-              title={isCarousel ? `Descarga el slide ${currentSlide + 1} actual` : "Descarga la imagen"}
+        {/* Template switcher — pill segmented control */}
+        {availableTemplates.length > 0 && (
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-faint)] font-semibold mb-1.5">
+              Estilo visual
+            </div>
+            <select
+              value={currentTemplate}
+              onChange={(e) => handleChangeTemplate(e.target.value)}
+              disabled={pending}
+              className="text-xs"
             >
-              ⬇ Descargar {isCarousel ? `slide ${currentSlide + 1}` : "imagen"}
-            </button>
-            {isCarousel && slides.length > 1 && (
-              <button
-                onClick={handleDownloadAllSlides}
-                className="btn btn-secondary text-xs"
-                title="Descarga los 5 slides uno por uno"
-              >
-                ⬇ Todos
-              </button>
-            )}
+              {availableTemplates.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.slug.replace(/^(yc|ar)-/, "").replace(/-/g, " ")}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-        {availableTemplates.length > 0 && (
-          <select
-            value={currentTemplate}
-            onChange={(e) => {
-              const slug = e.target.value;
-              setCurrentTemplate(slug);
-              startTransition(async () => {
-                await changeTemplate(post.id, slug);
-              });
-            }}
-            disabled={pending}
-            className="text-xs"
-          >
-            {availableTemplates.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.slug}
-              </option>
-            ))}
-          </select>
-        )}
+        {/* Spacer push actions to bottom */}
+        <div className="flex-1" />
 
-        <div className="flex gap-2 mt-auto pt-2">
-          <button
+        {/* Action bar: icons with tooltips */}
+        <div className="flex items-center gap-1 pt-3 border-t border-[var(--border)]">
+          <IconAction
+            icon={copiedFlash ? <Icon.Check size={16} /> : <Icon.Copy size={16} />}
+            tooltip={copiedFlash ? "Copiado" : "Copiar texto completo"}
+            onClick={handleCopy}
             disabled={pending}
-            onClick={() => {
-              startTransition(async () => {
-                await approvePost(post.id);
-                setStatus("approved");
-              });
-            }}
-            className={`btn flex-1 ${status === "approved" ? "btn-primary" : "btn-secondary"}`}
-          >
-            {status === "approved" ? "✓ Aprobado" : "Aprobar"}
-          </button>
-          <button
+            flash={copiedFlash}
+          />
+          {currentAsset && (
+            <IconAction
+              icon={<Icon.Download size={16} />}
+              tooltip={isCarousel ? `Descargar slide ${currentSlide + 1}` : "Descargar imagen"}
+              onClick={handleDownloadImage}
+              disabled={pending}
+            />
+          )}
+          {isCarousel && slides.length > 1 && (
+            <IconAction
+              icon={
+                <span className="text-[9px] font-bold px-1 border border-current rounded">
+                  ALL
+                </span>
+              }
+              tooltip="Descargar los 5 slides"
+              onClick={handleDownloadAllSlides}
+              disabled={pending}
+            />
+          )}
+          {imageFailed && currentAsset && (
+            <IconAction
+              icon={<Icon.Refresh size={16} />}
+              tooltip="Regenerar imagen"
+              onClick={handleRetryRender}
+              disabled={pending}
+            />
+          )}
+
+          <div className="flex-1" />
+
+          <IconAction
+            icon={<Icon.X size={16} />}
+            tooltip="Rechazar"
+            onClick={handleReject}
             disabled={pending}
-            onClick={() => {
-              startTransition(async () => {
-                await rejectPost(post.id);
-                setStatus("rejected");
-              });
-            }}
-            className="btn btn-secondary"
-          >
-            ✕
-          </button>
+            variant={status === "rejected" ? "danger-active" : "default"}
+          />
+          <IconAction
+            icon={<Icon.Check size={16} />}
+            tooltip="Aprobar"
+            onClick={handleApprove}
+            disabled={pending}
+            variant={status === "approved" ? "success-active" : "default"}
+          />
         </div>
       </div>
     </div>
+  );
+}
+
+function IconAction({
+  icon,
+  tooltip,
+  onClick,
+  disabled,
+  flash,
+  variant = "default",
+}: {
+  icon: React.ReactNode;
+  tooltip: string;
+  onClick: () => void;
+  disabled?: boolean;
+  flash?: boolean;
+  variant?: "default" | "success-active" | "danger-active";
+}) {
+  const classes =
+    variant === "success-active"
+      ? "bg-[var(--success)] text-white border-[var(--success)]"
+      : variant === "danger-active"
+        ? "bg-[var(--danger)] text-white border-[var(--danger)]"
+        : flash
+          ? "bg-[var(--success)] text-white border-[var(--success)]"
+          : "bg-transparent text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--bg-surface)] border-transparent hover:border-[var(--border)]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition-all border ${classes} group/btn`}
+      aria-label={tooltip}
+    >
+      {icon}
+      {/* Tooltip */}
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md bg-[var(--bg-surface-2)] border border-[var(--border)] text-[var(--text)] text-[10px] font-semibold whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity shadow-lg z-10">
+        {tooltip}
+      </span>
+    </button>
   );
 }
 
@@ -275,4 +361,13 @@ function buildCopyText(post: GeneratedPost): string {
     parts.push(post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" "));
   }
   return parts.join("\n");
+}
+
+function toSlug(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 40);
 }
