@@ -253,9 +253,38 @@ export async function insertAsset(
 export async function getAssetsByPostIds(postIds: string[]): Promise<GeneratedAsset[]> {
   if (postIds.length === 0) return [];
   const sb = createServerClient();
-  const { data, error } = await sb.from("generated_assets").select("*").in("post_id", postIds);
+  const { data, error } = await sb
+    .from("generated_assets")
+    .select("*")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as GeneratedAsset[];
+}
+
+/**
+ * Delete all assets for a post. Used before re-rendering so we don't end up
+ * with stale rows pointing to overwritten storage files.
+ */
+export async function deleteAssetsByPostId(postId: string): Promise<void> {
+  const sb = createServerClient();
+  const { error } = await sb.from("generated_assets").delete().eq("post_id", postId);
+  if (error) throw error;
+}
+
+export async function getVisualTemplateBySlug(
+  tenantId: string,
+  slug: string,
+): Promise<VisualTemplate | null> {
+  const sb = createServerClient();
+  const { data, error } = await sb
+    .from("visual_templates")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as VisualTemplate) ?? null;
 }
 
 // ────────── manual ideas ──────────

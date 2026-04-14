@@ -31,7 +31,7 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
   return (
     <div className="p-12 max-w-6xl animate-in">
       {/* Hero */}
-      <div className="mb-14">
+      <div className="mb-12">
         <Link
           href="/"
           className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)] hover:text-[var(--text)] font-semibold inline-flex items-center gap-2 mb-4"
@@ -58,12 +58,11 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
         </div>
       </div>
 
-      {/* Primary actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-14">
+      {/* Primary actions: Main CTA + Post Generator */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
         {/* Main CTA */}
         <form action={handleGenerateBatch} className="lg:col-span-3">
           <div className="card card-hover p-10 flex flex-col gap-5 h-full relative overflow-hidden group">
-            {/* Decorative glow */}
             <div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
               style={{
@@ -79,8 +78,8 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
                 Generar contenido
               </h2>
               <p className="text-sm text-[var(--text-dim)] leading-relaxed max-w-lg mb-2">
-                Creamos una tanda completa lista para publicar: copy con tu voz, visuales con tu paleta,
-                hashtags y CTAs por cada pieza.
+                Creamos un batch completo listo para publicar: copy con tu voz, visuales con tu
+                paleta, hashtags y CTAs por cada pieza.
               </p>
               <p className="text-xs text-[var(--text-faint)] leading-relaxed max-w-lg">
                 {cadenceHumanDescription(tenant.cadence)}
@@ -108,7 +107,7 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
           </div>
         </form>
 
-        {/* Secondary CTA: Post Generator */}
+        {/* Post Generator */}
         <Link
           href={`/t/${slug}/generate?mode=idea`}
           className="card card-hover p-8 flex flex-col gap-4 lg:col-span-2 group"
@@ -125,45 +124,42 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
         </Link>
       </div>
 
-      {/* Secondary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-14">
-        <StatCard
-          href={`/t/${slug}/voice`}
-          icon={<Icon.Mic size={18} />}
-          label="Voz y tono"
-          value={voice ? `v${voice.version}` : "Sin configurar"}
-          sub={
-            voice?.system_prompt_override
-              ? "Prompt custom activo"
-              : archetypeLabel(voice?.archetype)
-          }
-        />
-        <StatCard
-          href={`/t/${slug}/templates`}
-          icon={<Icon.Image size={18} />}
-          label="Plantillas visuales"
-          value={`${templates.length} activas`}
-          sub={engineLabel(tenant.image_engine)}
-        />
-        <StatCard
-          href={`/t/${slug}/history`}
-          icon={<Icon.Clock size={18} />}
-          label="Historial"
-          value={`${recentRuns.length} runs`}
-          sub={recentRuns.length > 0 ? "Click para ver el detalle" : "Todavía sin generaciones"}
-        />
-      </div>
+      {/* Voice link card — compact, single column */}
+      <Link
+        href={`/t/${slug}/voice`}
+        className="card card-hover p-5 mb-12 flex items-center gap-4 group"
+      >
+        <div className="w-10 h-10 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-colors flex-shrink-0">
+          <Icon.Mic size={18} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-[0.14em] text-[var(--text-faint)] font-semibold mb-0.5">
+            Voz y tono
+          </div>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <div className="text-sm font-semibold text-[var(--text)]">
+              {voice ? `Versión ${voice.version}` : "Sin configurar"}
+            </div>
+            {voice && (
+              <div className="text-xs text-[var(--text-dim)]">
+                {voice.system_prompt_override ? "Prompt custom activo" : archetypeLabel(voice.archetype)}
+              </div>
+            )}
+          </div>
+        </div>
+        <Icon.ChevronRight size={18} />
+      </Link>
 
       {/* Recent runs */}
       {recentRuns.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl uppercase tracking-tight">Runs recientes</h2>
+            <h2 className="font-display text-2xl uppercase tracking-tight">Ejecuciones recientes</h2>
             <Link
               href={`/t/${slug}/history`}
               className="text-sm font-semibold text-[var(--accent)] hover:opacity-80"
             >
-              Ver todos →
+              Ver historial completo →
             </Link>
           </div>
           <div className="card divide-y divide-[var(--border)] overflow-hidden">
@@ -178,7 +174,7 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-[var(--text)]">
-                        {r.mode === "batch" ? "Tanda completa" : "Post individual"}
+                        {r.mode === "batch" ? "Contenido generado" : "Post individual"}
                       </div>
                       <div className="text-xs text-[var(--text-faint)] mt-0.5">
                         {new Date(r.created_at).toLocaleString("es-AR", {
@@ -198,38 +194,6 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
         </div>
       )}
     </div>
-  );
-}
-
-function StatCard({
-  href,
-  icon,
-  label,
-  value,
-  sub,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <Link href={href} className="card card-hover p-6 flex flex-col gap-3 group">
-      <div className="flex items-center justify-between">
-        <div className="w-9 h-9 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
-          {icon}
-        </div>
-        <Icon.ChevronRight size={16} />
-      </div>
-      <div>
-        <div className="text-xs uppercase tracking-[0.14em] text-[var(--text-faint)] font-semibold mb-1">
-          {label}
-        </div>
-        <div className="text-2xl font-bold text-[var(--text)]">{value}</div>
-        {sub && <div className="text-xs text-[var(--text-dim)] mt-1">{sub}</div>}
-      </div>
-    </Link>
   );
 }
 

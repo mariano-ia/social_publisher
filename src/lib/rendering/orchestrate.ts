@@ -10,6 +10,8 @@ import {
   updatePost,
   consumeManualIdea,
   createRun,
+  deleteAssetsByPostId,
+  getVisualTemplateBySlug,
 } from "@/lib/db/queries";
 import type { GeneratedPost, PostFormat, Tenant, VisualTemplate } from "@/lib/db/types";
 import { composeSystemPrompt } from "@/lib/prompts/compose";
@@ -170,6 +172,11 @@ async function renderAllImages(tenant: Tenant, posts: GeneratedPost[]): Promise<
 }
 
 async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise<void> {
+  // Wipe any existing assets for this post before re-rendering. Without
+  // this, rerenderPost would leave stale rows that the UI might pick up
+  // before the new ones.
+  await deleteAssetsByPostId(post.id);
+
   const vars = post.visual_variables as {
     title?: string;
     subtitle?: string;
@@ -179,13 +186,27 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
     scene_hint?: string;
   };
 
-  // ARGO single posts → gpt-image-1 for the photo, then HTML compositing.
-  // Pipeline:
-  //   1. Ask gpt-image-1 for a photo-only image (no text, no UI)
-  //   2. Render the ar-ig-photo HTML template with photo_url pointing to it
-  //   3. Upload the composited PNG
-  // The intermediate photo is kept in storage too (with a -photo suffix) for debug.
-  if (tenant.image_engine === "argo_photo_panel" && (post.format === "ig_feed" || post.format === "li_single")) {
+  // Unique suffix per render so storage filenames never collide with
+  // previously-cached URLs on the client or CDN.
+  const renderSuffix = Date.now().toString(36);
+
+  // Look up the selected template from the DB to route the render pipeline.
+  // The template's `engine` tells us whether it needs a gpt-image-1 photo
+  // (argo_photo_panel) or is a pure HTML render (html). The tenant's default
+  // engine is a FALLBACK only.
+  const selectedSlug = post.visual_template_slug;
+  const selectedTemplate = selectedSlug
+    ? await getVisualTemplateBySlug(tenant.id, selectedSlug)
+    : null;
+  const templateEngine = selectedTemplate?.engine ?? tenant.image_engine;
+
+  // ARGO-style pipeline: template requests a gpt-image-1 photo + HTML composite.
+  // Used for ig_feed and li_single posts when the selected template has
+  // engine === "argo_photo_panel" (ar-ig-photo, ar-ig-minimal, etc.)
+  if (
+    templateEngine === "argo_photo_panel" &&
+    (post.format === "ig_feed" || post.format === "li_single")
+  ) {
     const photoResult = await renderArgoSinglePhoto({
       format: post.format,
       title: vars.title ?? post.title ?? "",
@@ -196,15 +217,18 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
       postId: post.id,
     });
 
-    // Composite the HTML panel over the photo
-    const tmpl = getHtmlTemplate("ar-ig-photo");
-    if (!tmpl) throw new Error("ar-ig-photo template not found");
+    // Composite the HTML panel over the photo using the SELECTED template slug.
+    // Falls back to ar-ig-photo if the slug doesn't resolve in the registry.
+    const tmplSlug = selectedSlug && getHtmlTemplate(selectedSlug) ? selectedSlug : "ar-ig-photo";
+    const tmpl = getHtmlTemplate(tmplSlug);
+    if (!tmpl) throw new Error(`Template ${tmplSlug} not found`);
     const dims = FORMAT_DIMS[post.format];
     const html = tmpl({
       width: dims.width,
       height: dims.height,
       title: vars.title ?? post.title ?? "",
       subtitle: vars.subtitle,
+      body_text: vars.body_text,
       pillar: post.pillar ?? vars.pillar,
       photo_url: photoResult.publicUrl,
     });
@@ -214,7 +238,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
       height: dims.height,
       tenantSlug: tenant.slug,
       postId: post.id,
-      filename: "single.png",
+      filename: `single-${renderSuffix}.png`,
     });
     await insertAsset({
       post_id: post.id,
@@ -269,7 +293,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
           height: dims.height,
           tenantSlug: tenant.slug,
           postId: post.id,
-          filename: `slide-${String(slide.index).padStart(2, "0")}.png`,
+          filename: `slide-${String(slide.index).padStart(2, "0")}-${renderSuffix}.png`,
         });
         await insertAsset({
           post_id: post.id,
@@ -302,7 +326,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
           height: dims.height,
           tenantSlug: tenant.slug,
           postId: post.id,
-          filename: `slide-${String(slide.index).padStart(2, "0")}.png`,
+          filename: `slide-${String(slide.index).padStart(2, "0")}-${renderSuffix}.png`,
         });
         await insertAsset({
           post_id: post.id,
@@ -361,7 +385,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
         height: dims.height,
         tenantSlug: tenant.slug,
         postId: post.id,
-        filename: `slide-${String(slide.index).padStart(2, "0")}.png`,
+        filename: `slide-${String(slide.index).padStart(2, "0")}-${renderSuffix}.png`,
       });
       await insertAsset({
         post_id: post.id,
@@ -394,7 +418,7 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
     height: dims.height,
     tenantSlug: tenant.slug,
     postId: post.id,
-    filename: "single.png",
+    filename: `single-${renderSuffix}.png`,
   });
   await insertAsset({
     post_id: post.id,
@@ -410,13 +434,13 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
 
 /**
  * Re-render a single post (e.g., after the user changes its visual template
- * in the review screen). Reuses content from the post but generates new image(s).
+ * in the review screen). Re-reads the post from the DB first so we pick up
+ * any changes (e.g. visual_template_slug was just updated), deletes existing
+ * assets, then re-runs the full render pipeline.
  */
 export async function rerenderPost(postId: string): Promise<void> {
   const post = await getPost(postId);
   if (!post) throw new Error(`Post ${postId} not found`);
-  const tenant = await import("@/lib/db/queries").then((m) => m.getTenantBySlug);
-  // We need the full tenant; fetch by id instead
   const sb = (await import("@/lib/db/supabase")).createServerClient();
   const { data: tenantRow } = await sb.from("tenants").select("*").eq("id", post.tenant_id).maybeSingle();
   if (!tenantRow) throw new Error("Tenant not found");
