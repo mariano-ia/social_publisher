@@ -25,8 +25,16 @@ Para cada post:
 2. Escribí un \`topic\` corto y atómico (1 oración) que describa el ángulo único del post — esto se usa para anti-repetición.
 3. Escribí \`title\` (hook), \`copy\` (cuerpo completo listo para publicar), \`hashtags\` (array), \`cta\`.
 4. Elegí \`visual_template_slug\` de la lista de templates disponibles para ese formato — el slug debe matchear semánticamente con el contenido del post.
-5. Llená \`visual_variables\` con los campos universales del formato: \`{title, subtitle, body_text, accent, pillar, scene_hint}\`. No todos son obligatorios.
-6. Para carruseles, llená \`slides[]\` con exactamente 5 slides en el orden \`cover → content×3 → cta\`. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. IMPORTANTE: \`index\` empieza en 1 (no en 0). Los valores esperados son 1, 2, 3, 4, 5 — uno por slide en ese orden exacto.
+5. Llená \`visual_variables\` siguiendo ESTRICTAMENTE estas reglas por campo:
+   - \`title\` (REQUERIDO): el texto principal que va EN LA IMAGEN. **Máximo 8 palabras, idealmente 3-6.** Es un HOOK visual, no una oración explicativa. Ejemplos buenos: "Product judgment > velocity", "El roadmap es una hipótesis", "Shape". Ejemplos malos: "Agregar features sin medir retention es tapar agujeros" (demasiado largo, va en body_text).
+   - \`subtitle\` (OPCIONAL): frase corta de contexto (máx 12 palabras) que va DEBAJO del title cuando el template lo soporta.
+   - \`body_text\` (OPCIONAL): texto de soporte (máx 30 palabras) para bloque de body. Si el título ya dice todo, dejá este campo vacío.
+   - \`accent\`, \`pillar\`, \`scene_hint\`: metadata opcional.
+
+   IMPORTANTE: El \`copy\` del post (nivel post) es el caption largo que acompaña la imagen en IG/LI. Pero \`visual_variables.title\` es el texto EN LA IMAGEN y tiene que ser corto.
+6. Para carruseles, llená \`slides[]\` con exactamente 5 slides en el orden \`cover → content×3 → cta\`. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. **slides[].title sigue la misma regla: máximo 8 palabras, hook visual.** El texto largo va en slides[].body. IMPORTANTE: \`index\` empieza en 1 (no en 0). Los valores esperados son 1, 2, 3, 4, 5 — uno por slide en ese orden exacto.
+
+REGLA DE ESCAPE: si tu copy contiene comillas dobles, escapalas con backslash (\\"). Si contiene saltos de línea dentro de strings, usá \\n en lugar de newlines literales.
 
 REGLA DURA: respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backticks, sin texto antes o después) con este shape:
 

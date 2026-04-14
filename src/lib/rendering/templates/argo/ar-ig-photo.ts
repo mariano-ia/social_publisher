@@ -31,20 +31,23 @@ export function arIgPhoto(props: ArgoTemplateProps): string {
     html, body { background: ${AR_TOKENS.lavenderLight}; color: ${AR_TOKENS.textDark}; }
     .frame { position: relative; height: 100%; ${frameBg} }
 
-    /* Smooth multi-stop overlay: lavender on top (hides the photo top to
-       mimic the Figma's pale top area), transparent in the middle where the
-       photo reads clearly, dark at the bottom so white text has contrast. */
+    /* Smooth overlay: thin lavender strip on top (just for the logo),
+       photo fully visible in the middle (no overlay at all), gradient to
+       dark only in the bottom third where the headline sits. The photo
+       is the hero of the image — overlay only where strictly needed for
+       contrast. */
     .overlay {
       position: absolute; inset: 0;
       background: linear-gradient(
         180deg,
         ${AR_TOKENS.lavenderLight} 0%,
-        ${AR_TOKENS.lavenderLight} 22%,
-        rgba(233, 229, 245, 0.85) 32%,
-        rgba(233, 229, 245, 0.15) 45%,
+        ${AR_TOKENS.lavenderLight} 10%,
+        rgba(233, 229, 245, 0.75) 14%,
+        rgba(233, 229, 245, 0) 22%,
         rgba(0, 0, 0, 0) 55%,
-        rgba(0, 0, 0, 0.35) 72%,
-        rgba(0, 0, 0, 0.78) 88%,
+        rgba(0, 0, 0, 0.15) 65%,
+        rgba(0, 0, 0, 0.55) 78%,
+        rgba(0, 0, 0, 0.85) 92%,
         rgba(0, 0, 0, 0.92) 100%
       );
       pointer-events: none;

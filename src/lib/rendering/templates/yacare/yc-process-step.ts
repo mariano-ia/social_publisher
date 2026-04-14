@@ -1,19 +1,37 @@
 import { htmlShell, logoTag, type YacareTemplateProps } from "./_shared";
 
+/**
+ * Process step with adaptive layout. If title is a single short word/phrase
+ * (like "Understand") we render it HUGE as the hero. If it's longer, we
+ * render it smaller with more breathing room.
+ */
 export function ycProcessStep(props: YacareTemplateProps): string {
-  // Title is the step name (e.g. "Understand"). subtitle is body text.
-  const stepName = props.title ?? "Understand";
+  const stepName = (props.title ?? "Understand").trim();
   const stepNumber = (props.slide?.index ?? 1).toString().padStart(2, "0");
   const totalSteps = "04";
-  const body = props.body_text ?? props.subtitle ?? "Antes que exista un solo pixel, mapeamos usuarios, problema y dirección.";
+  const body = (props.body_text ?? props.subtitle ?? "").trim();
+
+  // Adaptive size: single word gets HUGE, multi-word gets smaller
+  const wordCount = stepName.split(/\s+/).length;
+  const charCount = stepName.length;
+  const titleSize =
+    wordCount === 1 && charCount < 12
+      ? 220
+      : wordCount === 1
+        ? 160
+        : charCount > 40
+          ? 78
+          : charCount > 24
+            ? 104
+            : 132;
 
   const styles = `
     .glow { position: absolute; right: -250px; bottom: -100px; width: 700px; height: 700px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%); pointer-events: none; }
     .step-chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; background: rgba(138,94,255,0.12); border: 1px solid rgba(138,94,255,0.4); border-radius: 999px; align-self: flex-start; margin-bottom: 28px; }
     .step-chip .num { font-family: var(--supporting); font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: 0.08em; }
     .step-chip .label { font-family: var(--supporting); font-weight: 500; font-size: 12px; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
-    .title { font-family: var(--display); font-weight: 700; font-size: 196px; line-height: 0.88; letter-spacing: -0.02em; text-transform: uppercase; }
-    .body { font-family: var(--body); font-size: 30px; font-weight: 400; line-height: 1.45; color: var(--text-dim); margin-top: 48px; max-width: 820px; }
+    .title { font-family: var(--display); font-weight: 700; font-size: ${titleSize}px; line-height: 0.92; letter-spacing: -0.02em; text-transform: uppercase; max-width: 920px; }
+    .body { font-family: var(--body); font-size: 28px; font-weight: 400; line-height: 1.45; color: var(--text-dim); margin-top: 44px; max-width: 820px; }
   `;
 
   const html = `
@@ -31,7 +49,7 @@ export function ycProcessStep(props: YacareTemplateProps): string {
           <span class="label">de ${totalSteps}</span>
         </div>
         <div class="title">${escapeHtml(stepName)}</div>
-        <div class="body">${escapeHtml(body)}</div>
+        ${body ? `<div class="body">${escapeHtml(body)}</div>` : ""}
       </div>
       <div class="footer">
         <div class="slug"><span class="dot"></span>PROCESS STEP</div>
@@ -43,6 +61,7 @@ export function ycProcessStep(props: YacareTemplateProps): string {
   return htmlShell({ title: "yc-process-step", styles, body: html });
 }
 
-function escapeHtml(s: string): string {
+function escapeHtml(s: string | null | undefined): string {
+  if (!s) return "";
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

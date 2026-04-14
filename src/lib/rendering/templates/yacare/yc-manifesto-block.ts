@@ -1,24 +1,23 @@
 import { htmlShell, logoTag, type YacareTemplateProps } from "./_shared";
 
+/**
+ * Manifesto block: long-form statement with mixed weights. The title becomes
+ * the bold top block, the body becomes the regular-weight supporting block.
+ * No hardcoded "B2B SaaS" accent — let the content be whatever it is.
+ */
 export function ycManifestoBlock(props: YacareTemplateProps): string {
-  const headlineA = props.title ?? "Diseñamos, construimos y escalamos productos B2B SaaS.";
-  const headlineB = props.body_text ?? props.subtitle ?? "Sin equipos inflados. Sin proyectos eternos sin dirección. Just sharp execution de gente que se obsesiona por outcomes.";
+  const headlineA = (props.title ?? "Diseñamos, construimos y escalamos productos B2B SaaS.").trim();
+  const headlineB = (props.body_text ?? props.subtitle ?? "Sin equipos inflados. Sin proyectos eternos sin dirección.").trim();
 
-  // Naively highlight "B2B SaaS" or whatever's in subtitle as accent
-  const accentTerm = "B2B SaaS";
-  const headlineAHtml = escapeHtml(headlineA).replace(
-    accentTerm,
-    `<span class="em">${accentTerm}</span>`,
-  );
+  // Adaptive size for the hero block
+  const aSize = headlineA.length > 100 ? 56 : headlineA.length > 70 ? 72 : headlineA.length > 40 ? 88 : 104;
 
   const styles = `
     .glow-a { position: absolute; left: -200px; top: -100px; width: 700px; height: 700px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%); pointer-events: none; }
     .glow-b { position: absolute; right: -150px; bottom: -200px; width: 600px; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%); pointer-events: none; }
-    .block-a { font-family: var(--display); font-weight: 700; font-size: 96px; line-height: 0.92; letter-spacing: -0.02em; text-transform: uppercase; max-width: 900px; }
-    .block-a .em { color: var(--accent); }
-    .divider { width: 48px; height: 2px; background: var(--accent); margin: 44px 0 36px; }
-    .block-b { font-family: var(--body); font-size: 30px; font-weight: 400; line-height: 1.45; color: var(--text-dim); max-width: 820px; }
-    .block-b strong { color: var(--text); font-weight: 600; }
+    .block-a { font-family: var(--display); font-weight: 700; font-size: ${aSize}px; line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase; max-width: 920px; color: var(--text); }
+    .divider { width: 48px; height: 2px; background: var(--accent); margin: 36px 0 30px; }
+    .block-b { font-family: var(--body); font-size: 28px; font-weight: 400; line-height: 1.45; color: var(--text-dim); max-width: 820px; }
   `;
 
   const html = `
@@ -32,7 +31,7 @@ export function ycManifestoBlock(props: YacareTemplateProps): string {
         <div class="tag">Manifiesto</div>
       </div>
       <div class="middle">
-        <div class="block-a">${headlineAHtml}</div>
+        <div class="block-a">${escapeHtml(headlineA)}</div>
         <div class="divider"></div>
         <div class="block-b">${escapeHtml(headlineB)}</div>
       </div>
@@ -45,6 +44,7 @@ export function ycManifestoBlock(props: YacareTemplateProps): string {
   return htmlShell({ title: "yc-manifesto-block", styles, body: html });
 }
 
-function escapeHtml(s: string): string {
+function escapeHtml(s: string | null | undefined): string {
+  if (!s) return "";
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
