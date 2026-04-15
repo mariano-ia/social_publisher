@@ -31,24 +31,47 @@ export function arIgPhoto(props: ArgoTemplateProps): string {
     html, body { background: ${AR_TOKENS.lavenderLight}; color: ${AR_TOKENS.textDark}; }
     .frame { position: relative; height: 100%; ${frameBg} }
 
-    /* Smooth overlay: thin lavender strip on top (just for the logo),
-       photo fully visible in the middle (no overlay at all), gradient to
-       dark only in the bottom third where the headline sits. The photo
-       is the hero of the image — overlay only where strictly needed for
-       contrast. */
-    .overlay {
-      position: absolute; inset: 0;
+    /* Top strip: very subtle lavender tint just so the logo pill has breathing
+       room. Short and soft — doesn't compete with the photo. */
+    .top-strip {
+      position: absolute; top: 0; left: 0; right: 0; height: 18%;
       background: linear-gradient(
         180deg,
-        ${AR_TOKENS.lavenderLight} 0%,
-        ${AR_TOKENS.lavenderLight} 10%,
-        rgba(233, 229, 245, 0.75) 14%,
-        rgba(233, 229, 245, 0) 22%,
-        rgba(0, 0, 0, 0) 55%,
-        rgba(0, 0, 0, 0.15) 65%,
-        rgba(0, 0, 0, 0.55) 78%,
-        rgba(0, 0, 0, 0.85) 92%,
-        rgba(0, 0, 0, 0.92) 100%
+        rgba(233, 229, 245, 0.92) 0%,
+        rgba(233, 229, 245, 0.55) 40%,
+        rgba(233, 229, 245, 0) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Bottom overlay: dark violet with mix-blend-mode multiply.
+       Multiply preserves the photo's detail and tints it violet instead of
+       layering a flat black box on top. More elegant, more photographic,
+       more on-brand with Argo's purple palette. */
+    .bottom-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 55%;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(42, 20, 78, 0.35) 18%,
+        rgba(42, 20, 78, 0.70) 45%,
+        rgba(20, 8, 45, 0.95) 80%,
+        rgba(12, 4, 28, 1) 100%
+      );
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    /* Secondary bottom overlay: solid dark layer underneath the multiply
+       one, so very light photos still get enough contrast for white text. */
+    .bottom-contrast {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 42%;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.15) 35%,
+        rgba(0, 0, 0, 0.45) 70%,
+        rgba(0, 0, 0, 0.6) 100%
       );
       pointer-events: none;
     }
@@ -86,7 +109,9 @@ export function arIgPhoto(props: ArgoTemplateProps): string {
 
   const html = `
     <div class="frame">
-      <div class="overlay"></div>
+      <div class="bottom-contrast"></div>
+      <div class="bottom-overlay"></div>
+      <div class="top-strip"></div>
       <div class="bar-top"></div>
       <div class="logo-pill"><span class="txt">Argo Method</span></div>
       <div class="content">
