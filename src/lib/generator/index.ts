@@ -14,9 +14,12 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = "claude-sonnet-4-5";
 const MAX_TOKENS = 8000;
 
+export type OutputLanguage = "es" | "en";
+
 interface GenerateBatchInput {
   systemPrompt: string;
   cadence: Cadence;
+  language: OutputLanguage;
   manualIdea?: { text: string; format: PostFormat; notes?: string };
 }
 
@@ -25,7 +28,7 @@ const SingleIdeaResponseSchema = z.object({
   posts: z.array(GeneratedPostSchema).length(1),
 });
 
-const BATCH_USER_PROMPT = (cadence: Cadence) => {
+const BATCH_USER_PROMPT_ES = (cadence: Cadence) => {
   const total = cadence.ig_feed + cadence.li_single + cadence.li_carousel + cadence.ig_carousel;
   const lines: string[] = [];
   if (cadence.ig_feed > 0)
@@ -52,7 +55,7 @@ Para cada post:
 3. Escribí \`title\` (hook), \`copy\` (cuerpo completo listo para publicar), \`hashtags\` (array), \`cta\`.
 4. Elegí \`visual_template_slug\` de la lista de templates disponibles para ese formato — el slug debe matchear semánticamente con el contenido.
 5. Llená \`visual_variables\` siguiendo ESTRICTAMENTE estas reglas por campo:
-   - \`title\` (REQUERIDO): el texto principal que va EN LA IMAGEN. **Máximo 8 palabras, idealmente 3-6.** Es un HOOK visual, no una oración explicativa. Ejemplos buenos: "Product judgment > velocity", "El roadmap es una hipótesis", "Shape". Ejemplos malos: "Agregar features sin medir retention es tapar agujeros" (demasiado largo, va en body_text).
+   - \`title\` (REQUERIDO): el texto principal que va EN LA IMAGEN. **Máximo 8 palabras, idealmente 3-6.** Es un HOOK visual, no una oración explicativa.
    - \`subtitle\` (OPCIONAL): frase corta de contexto (máx 12 palabras).
    - \`body_text\` (OPCIONAL): texto de soporte (máx 30 palabras) para bloque de body. Si el título ya dice todo, dejá este campo vacío.
    - \`accent\`, \`pillar\`, \`scene_hint\`: metadata opcional.
@@ -61,7 +64,7 @@ Para cada post:
 6. Para carruseles (ig_carousel o li_carousel), llená \`slides[]\` con exactamente ${cadence.carousel_slides} slides en el orden: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. **slides[].title sigue la misma regla: máximo 8 palabras, hook visual.** El texto largo va en slides[].body. \`index\` empieza en 1 (no en 0).
 
 REGLA DE VARIEDAD DE ESTILOS (OBLIGATORIA):
-**Cuando tengas múltiples posts del mismo formato, DEBEN usar visual_template_slug DIFERENTES.** Ejemplo: si hay 2 posts ig_feed, el primero usa un slug y el segundo usa OTRO. Nunca el mismo slug dos veces en el mismo formato. Esto asegura variedad visual en cada tanda.
+**Cuando tengas múltiples posts del mismo formato, DEBEN usar visual_template_slug DIFERENTES.**
 
 REGLA DE ESCAPE: si tu copy contiene comillas dobles, escapalas con backslash (\\"). Si contiene saltos de línea dentro de strings, usá \\n en lugar de newlines literales.
 
@@ -73,7 +76,57 @@ REGLA DURA: respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backtic
 }`;
 };
 
-const SINGLE_IDEA_USER_PROMPT = (input: NonNullable<GenerateBatchInput["manualIdea"]>) => `Generá UN SOLO post de formato \`${input.format}\` basado en la siguiente idea del usuario:
+const BATCH_USER_PROMPT_EN = (cadence: Cadence) => {
+  const total = cadence.ig_feed + cadence.li_single + cadence.li_carousel + cadence.ig_carousel;
+  const lines: string[] = [];
+  if (cadence.ig_feed > 0)
+    lines.push(`- ${cadence.ig_feed} **Instagram feed** posts (\`format: "ig_feed"\`)`);
+  if (cadence.li_single > 0)
+    lines.push(`- ${cadence.li_single} single **LinkedIn** posts (\`format: "li_single"\`)`);
+  if (cadence.li_carousel > 0)
+    lines.push(
+      `- ${cadence.li_carousel} **LinkedIn** ${cadence.li_carousel === 1 ? "carousel" : "carousels"} (\`format: "li_carousel"\`), each with exactly ${cadence.carousel_slides} slides in order: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta`,
+    );
+  if (cadence.ig_carousel > 0)
+    lines.push(
+      `- ${cadence.ig_carousel} **Instagram** ${cadence.ig_carousel === 1 ? "carousel" : "carousels"} (\`format: "ig_carousel"\`), each with exactly ${cadence.carousel_slides} slides in order: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta`,
+    );
+
+  return `Generate a new batch of posts for this brand now — in ENGLISH — following its voice, vocabulary, pillars and anti-repeat rules.
+
+REQUIRED DISTRIBUTION (${total} posts total):
+${lines.join("\n")}
+
+For each post:
+1. Pick the appropriate content pillar (must match one of the pillars defined above).
+2. Write a short atomic \`topic\` (1 sentence) describing the unique angle of the post — used for anti-repeat.
+3. Write \`title\` (hook), \`copy\` (full body, ready to publish), \`hashtags\` (array), \`cta\`.
+4. Pick \`visual_template_slug\` from the list of templates available for that format — the slug must match semantically.
+5. Fill \`visual_variables\` following these rules STRICTLY per field:
+   - \`title\` (REQUIRED): the main text that goes ON the image. **Max 8 words, ideally 3-6.** It's a visual HOOK, not an explanatory sentence. Good: "Product judgment > velocity", "The roadmap is a hypothesis", "Shape". Bad: long full sentences (those belong in body_text).
+   - \`subtitle\` (OPTIONAL): short context phrase (max 12 words).
+   - \`body_text\` (OPTIONAL): supporting text (max 30 words) for a body block. If the title says it all, leave this empty.
+   - \`accent\`, \`pillar\`, \`scene_hint\`: optional metadata.
+
+   IMPORTANT: The post-level \`copy\` is the long caption that accompanies the image on IG/LI. But \`visual_variables.title\` is the text ON the image and must be short.
+6. For carousels (ig_carousel or li_carousel), fill \`slides[]\` with exactly ${cadence.carousel_slides} slides in order: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Each slide has \`{index, kind, title, body, visual_hint}\`. **slides[].title follows the same rule: max 8 words, visual hook.** Long text belongs in slides[].body. \`index\` starts at 1 (not 0).
+
+STYLE VARIETY RULE (MANDATORY):
+**When you have multiple posts of the same format, they MUST use DIFFERENT visual_template_slug values.** Never repeat the same slug twice within the same format — ensures visual variety across the batch.
+
+ESCAPE RULE: if your copy contains double quotes, escape them with backslash (\\"). If it contains line breaks inside strings, use \\n instead of literal newlines.
+
+HARD RULE: respond with VALID JSON ONLY (no markdown, no backticks, no text before or after) with this shape:
+
+{
+  "run_summary": "short string about the overall angle of the batch",
+  "posts": [ ...${total} posts following the distribution above ]
+}
+
+REMINDER: all copy, titles, hashtags, CTAs, slide text and topic descriptions must be in ENGLISH.`;
+};
+
+const SINGLE_IDEA_USER_PROMPT_ES = (input: NonNullable<GenerateBatchInput["manualIdea"]>) => `Generá UN SOLO post de formato \`${input.format}\` basado en la siguiente idea del usuario:
 
 """
 ${input.text}
@@ -89,6 +142,32 @@ Respondé ÚNICAMENTE con un JSON válido con este shape:
   "posts": [ ...1 post solamente ]
 }`;
 
+const SINGLE_IDEA_USER_PROMPT_EN = (input: NonNullable<GenerateBatchInput["manualIdea"]>) => `Generate ONE \`${input.format}\` post — in ENGLISH — based on the following user idea:
+
+"""
+${input.text}
+"""
+
+${input.notes ? `Additional notes: ${input.notes}` : ""}
+
+Keep all brand context, voice and rules. ${input.format === "li_carousel" || input.format === "ig_carousel" ? "Since it's a carousel, fill slides[] with 4 slides (cover → content → content → cta)." : ""}
+
+Respond with VALID JSON ONLY with this shape:
+{
+  "run_summary": "short string",
+  "posts": [ ...1 post only ]
+}
+
+REMINDER: all output must be in ENGLISH.`;
+
+const BATCH_USER_PROMPT = (cadence: Cadence, language: OutputLanguage) =>
+  language === "en" ? BATCH_USER_PROMPT_EN(cadence) : BATCH_USER_PROMPT_ES(cadence);
+
+const SINGLE_IDEA_USER_PROMPT = (
+  input: NonNullable<GenerateBatchInput["manualIdea"]>,
+  language: OutputLanguage,
+) => (language === "en" ? SINGLE_IDEA_USER_PROMPT_EN(input) : SINGLE_IDEA_USER_PROMPT_ES(input));
+
 interface CallResult<T> {
   parsed: T;
   retryCount: number;
@@ -96,13 +175,18 @@ interface CallResult<T> {
 
 export async function generateBatch(input: GenerateBatchInput): Promise<CallResult<BatchResponse>> {
   const userPrompt = input.manualIdea
-    ? SINGLE_IDEA_USER_PROMPT(input.manualIdea)
-    : BATCH_USER_PROMPT(input.cadence);
+    ? SINGLE_IDEA_USER_PROMPT(input.manualIdea, input.language)
+    : BATCH_USER_PROMPT(input.cadence, input.language);
 
   const isSingle = !!input.manualIdea;
   // For batch mode, validate against the exact cadence expected by this tenant.
   // For single mode, any 1-post response is valid.
   const schema = isSingle ? SingleIdeaResponseSchema : buildBatchSchema(input.cadence);
+
+  const retryNote =
+    input.language === "en"
+      ? (msg: string) => `\n\nIMPORTANT: your previous response failed validation: ${msg}. Fix it.`
+      : (msg: string) => `\n\nIMPORTANTE: Tu respuesta anterior tuvo este error de validación: ${msg}. Corregilo.`;
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -110,11 +194,7 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
       const response = await client.messages.create({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system:
-          input.systemPrompt +
-          (attempt > 0
-            ? `\n\nIMPORTANTE: Tu respuesta anterior tuvo este error de validación: ${String(lastError)}. Corregilo.`
-            : ""),
+        system: input.systemPrompt + (attempt > 0 ? retryNote(String(lastError)) : ""),
         messages: [{ role: "user", content: userPrompt }],
       });
 

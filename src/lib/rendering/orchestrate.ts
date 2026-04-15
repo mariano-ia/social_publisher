@@ -74,16 +74,21 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
   const recentPosts = await getRecentPostsForAntiRepeat(tenant.id);
   const allTemplates = await listVisualTemplates(tenant.id);
 
+  // Argo is an English-language brand. Everything else defaults to Spanish.
+  const outputLanguage: "es" | "en" = tenant.slug === "argo" ? "en" : "es";
+
   const systemPrompt = composeSystemPrompt({
     tenant,
     voice,
     recentPosts,
     templates: allTemplates,
+    language: outputLanguage,
   });
 
   const { parsed, retryCount } = await generateBatch({
     systemPrompt,
     cadence: tenant.cadence,
+    language: outputLanguage,
     manualIdea: input.manualIdea
       ? { text: input.manualIdea.text, format: input.manualIdea.format, notes: input.manualIdea.notes ?? undefined }
       : undefined,

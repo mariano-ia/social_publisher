@@ -10,54 +10,58 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  * headline over the photo afterwards, so the AI never has to render text
  * (which it does poorly).
  *
- * The style direction targets documentary / editorial photography with natural
- * imperfections — NOT hyper-polished studio AI aesthetic.
+ * Subjects: pre-teen student athletes at a school or club sports program,
+ * explicitly mixed gender (boys AND girls), always supervised by coaches in
+ * an educational context. Sports Illustrated documentary style.
  *
- * IMPORTANT: Avoid age-specific descriptors ("niños", "jóvenes de X años")
- * which trigger OpenAI's moderation safety system. We use "estudiantes",
- * "atletas amateurs", "jugadores" as neutral terms.
+ * Moderation-safe phrasing: "young student-athletes at a school sports
+ * program" reliably passes OpenAI moderation where "niños" or specific ages
+ * sometimes trip it.
  */
-const STYLE_BASE_PHOTO_ONLY = `Fotografía editorial documental en color, estilo reportaje deportivo.
+const STYLE_BASE_PHOTO_ONLY = `Editorial documentary photography in full color, sports reportage style.
 
-CONTEXTO: escenas de entrenamiento y actividad deportiva en instituciones educativas o clubes amateurs. Los sujetos son atletas amateurs y sus entrenadores, en un contexto formal deportivo de club o escuela. La escena ocurre en espacios deportivos reales — cancha, gimnasio, pista, campo de entrenamiento.
+CONTEXT: training and sports activities inside schools or youth sports academies. The subjects are YOUNG STUDENT-ATHLETES (pre-teens, around 9 to 12 years old) together with their coaches, in a formal school or club sports setting. The scene takes place in real sports spaces — school gymnasium, athletic field, basketball court, soccer pitch, indoor training hall.
 
-ENFOQUE NARRATIVO: interacción profesional entre entrenador y atleta durante una actividad deportiva. Gestos naturales de enseñanza, demostración técnica, conversación sobre una jugada, análisis de movimiento. El momento capturado es una situación de aprendizaje deportivo real, no una pose ni un retrato.
+MIXED GENDER (MANDATORY): the athletes shown MUST include BOTH boys and girls together in the same frame whenever multiple subjects are present. Mixed-gender youth sports teams are the default. When the scene features only one athlete, alternate between a girl and a boy across different generations of this prompt. Never show an all-boys group.
 
-ESTÉTICA: Sports Illustrated feature photography, fotoperiodismo deportivo, editorial documentary. Calidad de autor, no stock photo, no corporate image, no "AI polished" aesthetic.
+NARRATIVE FOCUS: a professional interaction between a coach and one or more student-athletes during a training activity. Natural teaching gestures, technique demonstration, a short conversation about a play, movement analysis. The captured moment is a real learning situation, never a posed portrait.
 
-CÁMARA Y LENTE: 35mm o 50mm a f/1.8-2.8. Profundidad de campo natural con bokeh suave orgánico. Composición con regla de tercios — el sujeto principal NO va centrado, sino desplazado al primer o segundo tercio del cuadro. Enfoque puede estar en las manos, en el equipamiento, en un objeto del entorno, no siempre en el rostro.
+AESTHETIC: Sports Illustrated feature photography, editorial photojournalism, documentary look. Author-level quality — never stock photo, never corporate imagery, never a "polished AI" aesthetic.
 
-LUZ: natural, de ambiente deportivo real. Luz difusa de gimnasio, luz lateral de exterior, hora dorada de entrenamiento de tarde. Sombras naturales. NO iluminación uniforme de estudio. Acepta zonas un poco oscuras o luces un poco quemadas si corresponde al momento.
+CAMERA AND LENS: 35mm or 50mm at f/1.8–2.8. Natural depth of field with soft organic bokeh. Rule-of-thirds composition — the main subject is NOT centered, it sits in the first or second third of the frame. Focus may rest on hands, on a piece of equipment, on an object in the surroundings — not always on the face.
 
-IMPERFECCIÓN REAL: grano sutil tipo 35mm film, ligero desenfoque de movimiento en zonas no principales, detalles ambientales que no son perfectos (una botella de agua en el piso, una toalla, una línea de cancha desgastada). La imagen tiene que sentirse tomada en el momento, no producida en estudio.
+LIGHT: natural, from a real sports environment. Diffused gym light, side light from an outdoor field, golden-hour afternoon training. Natural shadows. NO uniform studio lighting. Slightly shaded areas or slightly blown highlights are acceptable if they match the moment.
 
-COLOR: rendering natural con tonos cálidos sutiles. NO saturación aumentada, NO look Instagram filter, NO HDR. Aspecto similar a papel fotográfico impreso de revista deportiva.
+REAL IMPERFECTION: subtle 35mm film grain, light motion blur on secondary elements, imperfect environmental details (a water bottle on the floor, a towel, a worn court line). The image must feel captured in the moment, not produced in a studio.
 
-COMPOSICIÓN: elementos en los bordes pueden recortarse naturalmente — no todo tiene que estar perfectamente encuadrado. Dejar "aire negativo" (zonas más lisas, fondo difuminado, piso, pared) donde el texto HTML se va a superponer después.
+COLOR: natural rendering with subtle warm tones. NO boosted saturation, NO Instagram-filter look, NO HDR. Like printed magazine paper from a sports publication.
 
-PROHIBIDO ABSOLUTO:
-- NADA de texto visible en la imagen (ni palabras, ni letras, ni logos, ni números, ni carteles)
-- NADA de elementos gráficos tipo UI (chips, pills, botones, cajas, overlays)
-- NADA de logos o marcas deportivas reales inventadas
-- NO iconos, ni gráficos decorativos, ni ilustraciones
-- NO marcos, ni bordes, ni frames alrededor de la imagen
-- NO escenas competitivas agresivas o físicas (sin tackles duros, sin contacto violento)
+COMPOSITION: elements at the edges may crop naturally — not everything needs to be perfectly framed. Leave "negative space" (smoother areas, blurred background, floor, wall) where the HTML text will be composited later.
 
-La imagen es SOLO la fotografía editorial. Toda la UI se agrega después en código.`;
+STRICTLY FORBIDDEN:
+- NO visible text in the image (no words, no letters, no logos, no numbers, no signs)
+- NO UI graphic elements (chips, pills, buttons, boxes, overlays)
+- NO real or fictional sports brand logos
+- NO icons, decorative graphics or illustrations
+- NO frames or borders around the image
+- NO aggressive physical competition (no hard tackles, no violent contact)
+- NO close-ups tightly framed on children's faces — always contextual, coach present or wider framing
 
-const PHOTO_FRAMING_SINGLE_IG = `FRAMING: formato cuadrado 1:1. Sujetos principales en la mitad inferior del frame para dejar aire negativo arriba donde irá el header. Composición con mucho "breathing room" alrededor.`;
+The image is ONLY the editorial photograph. All UI is added later in code.`;
 
-const PHOTO_FRAMING_SINGLE_LI = `FRAMING: formato horizontal 3:2. Sujetos desplazados hacia la izquierda del frame con el 30% derecho relativamente vacío (paisaje deportivo, fondo difuminado) para que el panel HTML se pueda superponer a la derecha.`;
+const PHOTO_FRAMING_SINGLE_IG = `FRAMING: 1:1 square format. Main subjects in the lower half of the frame so there is negative space up top for the header. Plenty of breathing room around the subjects.`;
 
-const PHOTO_FRAMING_CAROUSEL_COVER = `FRAMING: formato vertical 4:5. Composición que tenga el sujeto principal en el tercio superior del frame, dejando los dos tercios inferiores con "breathing room" (fondo difuminado, paisaje deportivo, piso, grass). Ese espacio inferior se cubrirá con un overlay oscuro y el titular HTML superpuesto.`;
+const PHOTO_FRAMING_SINGLE_LI = `FRAMING: 3:2 horizontal format. Subjects shifted toward the left of the frame with the right 30% relatively empty (sports landscape, blurred background) so the HTML panel can overlay on the right.`;
+
+const PHOTO_FRAMING_CAROUSEL_COVER = `FRAMING: 4:5 vertical format. Composition with the main subject in the upper third of the frame, leaving the bottom two thirds as breathing room (blurred background, sports landscape, floor, grass). That bottom area will be covered by a dark overlay with the HTML headline on top.`;
 
 const PILLAR_CONTEXT: Record<string, string> = {
   ciencia_metodologia:
-    "Escena de conversación profesional 1:1 entre entrenador y atleta amateur. Momento de análisis técnico o explicación de un concepto. Tono serio y profesional.",
+    "A focused 1-on-1 conversation between a coach and a young student-athlete. A moment of technical analysis or concept explanation. Professional, attentive tone. Alternate the athlete's gender across generations — girls and boys equally.",
   educacion_deportiva:
-    "Grupo de atletas amateurs en sesión de entrenamiento con el coach guiando la actividad. Demostración técnica, corrección de postura, momento didáctico. Energía controlada.",
+    "A mixed-gender group of young student-athletes (boys AND girls together) in a training session with the coach guiding the activity. Technique demonstration, posture correction, a teaching moment. Controlled energy.",
   producto:
-    "Entrenador observando un tablet o cuaderno técnico junto a un atleta amateur. Momento de revisión de resultados, análisis de performance, lectura de información.",
+    "A coach reviewing a tablet or technical notebook alongside a young student-athlete. A moment of results review, performance analysis, reading information. Alternate the athlete's gender across generations.",
 };
 
 const FORMAT_DIMENSIONS: Record<PostFormat | "carousel_slide", { size: "1024x1024" | "1024x1536" | "1536x1024"; aspect: string }> = {
@@ -97,10 +101,10 @@ export async function renderArgoSinglePhoto(input: RenderArgoSingleInput): Promi
 
 ${framing}
 
-${pillarHint ? `CONTEXTO DE ESCENA según el pilar de contenido: ${pillarHint}` : ""}
-${input.scene_hint ? `DETALLES ADICIONALES DE LA ESCENA: ${input.scene_hint}` : ""}
+${pillarHint ? `SCENE CONTEXT based on the content pillar: ${pillarHint}` : ""}
+${input.scene_hint ? `ADDITIONAL SCENE DETAILS: ${input.scene_hint}` : ""}
 
-RECORDATORIO FINAL: La imagen es SOLO FOTOGRAFÍA. Cero texto, cero UI, cero logos. El diseño gráfico se compone después en código HTML sobre esta foto.`;
+FINAL REMINDER: The image is ONLY the photograph. Zero text, zero UI, zero logos. Subjects are young pre-teen student-athletes (mixed gender: boys AND girls) with their coaches in a school or sports academy setting. Graphic design is composited later in HTML over this photo.`;
 
   return await callGptImageAndUpload(fullPrompt, dims.size, input.tenantSlug, input.postId, "single");
 }
@@ -137,10 +141,10 @@ export async function renderArgoCarouselCoverPhoto(
 
 ${PHOTO_FRAMING_CAROUSEL_COVER}
 
-${pillarHint ? `CONTEXTO DE ESCENA según el pilar de contenido: ${pillarHint}` : ""}
-${input.scene_hint ? `DETALLES ADICIONALES DE LA ESCENA: ${input.scene_hint}` : ""}
+${pillarHint ? `SCENE CONTEXT based on the content pillar: ${pillarHint}` : ""}
+${input.scene_hint ? `ADDITIONAL SCENE DETAILS: ${input.scene_hint}` : ""}
 
-RECORDATORIO FINAL: La imagen es SOLO FOTOGRAFÍA. Cero texto, cero UI, cero logos. El título del carrusel y los elementos gráficos se agregan después en HTML.`;
+FINAL REMINDER: The image is ONLY the photograph. Zero text, zero UI, zero logos. Subjects are young pre-teen student-athletes (mixed gender: boys AND girls) with their coaches in a school or sports academy setting. The carousel title and graphic elements are added later in HTML.`;
 
   return await callGptImageAndUpload(
     fullPrompt,

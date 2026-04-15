@@ -23,11 +23,42 @@ interface RecentPostSummary {
   created_at: string;
 }
 
+export type OutputLanguage = "es" | "en";
+
 export interface ComposeContext {
   tenant: Tenant;
   voice: BrandVoiceVersion;
   recentPosts: RecentPostSummary[];
   templates: VisualTemplate[];
+  language: OutputLanguage;
+}
+
+/**
+ * Hard language directive prepended to every system prompt. Argo's voice
+ * override is still in Spanish for historical reasons — this directive
+ * overrides it so the generator writes in the target language regardless.
+ */
+function languageDirective(lang: OutputLanguage): string {
+  if (lang === "en") {
+    return [
+      "# OUTPUT LANGUAGE — ENGLISH ONLY",
+      "",
+      "All generated content MUST be written in English: post titles, body copy,",
+      "CTAs, hashtags, visual_variables (title/subtitle/body_text), slide titles",
+      "and slide bodies, topic descriptions, run summaries. No Spanish words.",
+      "This rule overrides any language cue anywhere else in this prompt.",
+      "",
+    ].join("\n");
+  }
+  return [
+    "# IDIOMA DE SALIDA — ESPAÑOL RIOPLATENSE",
+    "",
+    "Toda la salida generada debe estar en español rioplatense (voseo cuando",
+    "corresponda, nunca tuteo): títulos, copy, CTAs, hashtags, visual_variables,",
+    "slides, topics, run_summary. Sin palabras en inglés salvo términos técnicos",
+    "que el diccionario de marca permita explícitamente.",
+    "",
+  ].join("\n");
 }
 
 /**
@@ -36,21 +67,27 @@ export interface ComposeContext {
  * structured form fields are ignored. Otherwise compose from form data.
  */
 export function composeSystemPrompt(ctx: ComposeContext): string {
-  const { tenant, voice, recentPosts, templates } = ctx;
+  const { tenant, voice, recentPosts, templates, language } = ctx;
+  const langBlock = languageDirective(language);
 
   // Override path: use legacy/hand-written prompt verbatim
   if (voice.system_prompt_override && voice.system_prompt_override.trim().length > 0) {
     return [
+      langBlock,
       voice.system_prompt_override,
       "",
       buildHistorySection(recentPosts),
       "",
       buildTemplatesSection(templates, tenant),
+      "",
+      langBlock,
     ].join("\n");
   }
 
   // Structured composition
   const sections: string[] = [];
+
+  sections.push(langBlock);
 
   // 1. Identity
   sections.push(`# ${tenant.name} — Departamento de contenido`);
