@@ -46,6 +46,9 @@ const BATCH_USER_PROMPT_ES = (cadence: Cadence) => {
 
   return `Generá ahora una tanda nueva de posts para esta marca, respetando voz, vocabulario, pilares y reglas de no-repetición.
 
+PROHIBIDO ABSOLUTO — EMOJIS Y SÍMBOLOS DECORATIVOS:
+Ningún campo del JSON puede contener emojis, iconos, símbolos unicode decorativos ni caracteres pictográficos. Esto incluye title, copy, topic, cta, hashtags, visual_variables (title/subtitle/body_text), slides[].title, slides[].body, run_summary. Sin excepciones. El render runtime no tiene fuente de emojis y los rompe visualmente.
+
 DISTRIBUCIÓN OBLIGATORIA (${total} posts en total):
 ${lines.join("\n")}
 
@@ -94,6 +97,9 @@ const BATCH_USER_PROMPT_EN = (cadence: Cadence) => {
 
   return `Generate a new batch of posts for this brand now — in ENGLISH — following its voice, vocabulary, pillars and anti-repeat rules.
 
+STRICTLY FORBIDDEN — NO EMOJIS OR DECORATIVE SYMBOLS:
+No field of the JSON may contain emojis, icons, decorative unicode symbols or pictographic characters. This includes title, copy, topic, cta, hashtags, visual_variables (title/subtitle/body_text), slides[].title, slides[].body, run_summary. No exceptions. The runtime renderer has no emoji font and breaks them visually.
+
 REQUIRED DISTRIBUTION (${total} posts total):
 ${lines.join("\n")}
 
@@ -136,6 +142,8 @@ ${input.notes ? `Notas adicionales: ${input.notes}` : ""}
 
 Mantené todo el contexto de marca, voz y reglas. ${input.format === "li_carousel" || input.format === "ig_carousel" ? "Como es carrusel, llená slides[] con 4 slides (cover → content → content → cta)." : ""}
 
+PROHIBIDO: ningún campo puede contener emojis, iconos ni símbolos unicode decorativos. Sin excepciones.
+
 Respondé ÚNICAMENTE con un JSON válido con este shape:
 {
   "run_summary": "string corto",
@@ -151,6 +159,8 @@ ${input.text}
 ${input.notes ? `Additional notes: ${input.notes}` : ""}
 
 Keep all brand context, voice and rules. ${input.format === "li_carousel" || input.format === "ig_carousel" ? "Since it's a carousel, fill slides[] with 4 slides (cover → content → content → cta)." : ""}
+
+FORBIDDEN: no field may contain emojis, icons or decorative unicode symbols. No exceptions.
 
 Respond with VALID JSON ONLY with this shape:
 {
@@ -204,7 +214,8 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
         .join("");
 
       const json = extractJson(text);
-      const parsed = schema.parse(json);
+      const sanitized = stripEmojisDeep(json);
+      const parsed = schema.parse(sanitized);
       return { parsed: parsed as BatchResponse, retryCount: attempt };
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
@@ -216,6 +227,33 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
 
 // Silence unused warning — kept for external imports.
 void BatchResponseSchema;
+
+/**
+ * Strip emojis and decorative unicode pictographs from any string field,
+ * recursively. The runtime puppeteer uses @sparticuz/chromium-min which
+ * ships without an emoji font — any emoji Claude emits otherwise renders
+ * as a "tofu" placeholder box (a vertical black pill with the unicode
+ * name inside). This is a belt-and-suspenders safety net on top of the
+ * explicit "no emojis" rule in the user prompt.
+ */
+const EMOJI_RE = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu;
+
+function stripEmojisDeep(value: unknown): unknown {
+  if (typeof value === "string") {
+    return value.replace(EMOJI_RE, "").replace(/[ \t]{2,}/g, " ").trim();
+  }
+  if (Array.isArray(value)) {
+    return value.map(stripEmojisDeep);
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = stripEmojisDeep(v);
+    }
+    return out;
+  }
+  return value;
+}
 
 /**
  * Parse Claude's response as JSON, with escalating recovery strategies:
