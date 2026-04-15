@@ -36,6 +36,7 @@ export const HTML_TEMPLATES: Record<string, HtmlTemplateFn> = {
 
 export const FORMAT_DIMS: Record<PostFormat, { width: number; height: number }> = {
   ig_feed: { width: 1080, height: 1080 },
+  ig_carousel: { width: 1080, height: 1350 },
   li_single: { width: 1200, height: 800 },
   li_carousel: { width: 1080, height: 1350 },
 };

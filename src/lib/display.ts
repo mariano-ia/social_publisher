@@ -20,11 +20,15 @@ export function formatLabel(format: string): string {
   switch (format) {
     case "ig_feed":
       return "Instagram Feed";
+    case "ig_carousel":
+      return "Instagram Carrusel";
     case "li_single":
       return "LinkedIn Post";
     case "li_carousel":
       return "LinkedIn Carrusel";
     case "li_carousel_slide":
+      return "Slide de Carrusel";
+    case "ig_carousel_slide":
       return "Slide de Carrusel";
     case "multi":
       return "Multi-formato";
@@ -34,9 +38,16 @@ export function formatLabel(format: string): string {
 }
 
 export function formatPlatform(format: string): "instagram" | "linkedin" | "other" {
-  if (format === "ig_feed") return "instagram";
+  if (format === "ig_feed" || format === "ig_carousel" || format === "ig_carousel_slide") return "instagram";
   if (format === "li_single" || format === "li_carousel" || format === "li_carousel_slide") return "linkedin";
   return "other";
+}
+
+/**
+ * Returns true if the format is a carousel (any platform).
+ */
+export function isCarouselFormat(format: string): boolean {
+  return format === "ig_carousel" || format === "li_carousel";
 }
 
 /**
@@ -102,10 +113,20 @@ export function cadenceHumanDescription(cadence: {
   ig_feed: number;
   li_single: number;
   li_carousel: number;
+  ig_carousel?: number;
   carousel_slides: number;
 }): string {
-  const totalPosts = cadence.ig_feed + cadence.li_single + cadence.li_carousel;
-  return `${totalPosts} publicaciones listas para publicar — ${cadence.ig_feed} posts de feed, ${cadence.li_single} posts de LinkedIn y ${cadence.li_carousel} carruseles de ${cadence.carousel_slides} slides cada uno.`;
+  const ig_carousel = cadence.ig_carousel ?? 0;
+  const totalPosts = cadence.ig_feed + cadence.li_single + cadence.li_carousel + ig_carousel;
+  const parts: string[] = [];
+  if (cadence.ig_feed > 0) parts.push(`${cadence.ig_feed} posts de Instagram`);
+  if (cadence.li_single > 0) parts.push(`${cadence.li_single} posts de LinkedIn`);
+  if (cadence.li_carousel > 0)
+    parts.push(`${cadence.li_carousel} ${cadence.li_carousel === 1 ? "carrusel" : "carruseles"} de LinkedIn`);
+  if (ig_carousel > 0)
+    parts.push(`${ig_carousel} ${ig_carousel === 1 ? "carrusel" : "carruseles"} de Instagram`);
+  const list = parts.length > 1 ? parts.slice(0, -1).join(", ") + " y " + parts.slice(-1) : parts[0] ?? "";
+  return `${totalPosts} publicaciones listas para publicar — ${list}. Los carruseles traen ${cadence.carousel_slides} slides cada uno.`;
 }
 
 export function archetypeLabel(archetype: string | null | undefined): string {

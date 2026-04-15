@@ -162,8 +162,12 @@ export async function renderHtmlToPng(
   }
 }
 
-export const FORMAT_DIMENSIONS: Record<"ig_feed" | "li_single" | "li_carousel_slide", { width: number; height: number }> = {
+export const FORMAT_DIMENSIONS: Record<
+  "ig_feed" | "li_single" | "li_carousel_slide" | "ig_carousel_slide",
+  { width: number; height: number }
+> = {
   ig_feed: { width: 1080, height: 1080 },
+  ig_carousel_slide: { width: 1080, height: 1350 },
   li_single: { width: 1200, height: 800 },
   li_carousel_slide: { width: 1080, height: 1350 },
 };

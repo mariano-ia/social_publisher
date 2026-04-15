@@ -48,7 +48,7 @@ async function seedArgo() {
         name: "Argo Method",
         website_url: "https://argomethod.com",
         image_engine: "argo_photo_panel",
-        cadence: { ig_feed: 4, li_single: 2, li_carousel: 2, carousel_slides: 5 },
+        cadence: { ig_feed: 2, li_single: 0, li_carousel: 0, ig_carousel: 1, carousel_slides: 4 },
       })
       .select()
       .single();
@@ -163,7 +163,7 @@ async function seedYacare() {
         name: "Yacaré",
         website_url: "https://www.yacare.io",
         image_engine: "html",
-        cadence: { ig_feed: 4, li_single: 2, li_carousel: 2, carousel_slides: 5 },
+        cadence: { ig_feed: 2, li_single: 2, li_carousel: 1, ig_carousel: 0, carousel_slides: 4 },
       })
       .select()
       .single();

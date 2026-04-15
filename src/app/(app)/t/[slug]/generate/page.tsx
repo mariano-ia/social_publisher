@@ -96,7 +96,10 @@ export default async function GeneratePage({
           <div className="text-sm text-[var(--text-dim)]">
             <strong className="text-[var(--text)]">{tenant.cadence.ig_feed}</strong> posts de feed +{" "}
             <strong className="text-[var(--text)]">{tenant.cadence.li_single}</strong> posts de LinkedIn +{" "}
-            <strong className="text-[var(--text)]">{tenant.cadence.li_carousel}</strong> carruseles de{" "}
+            <strong className="text-[var(--text)]">
+              {tenant.cadence.li_carousel + (tenant.cadence.ig_carousel ?? 0)}
+            </strong>{" "}
+            {tenant.cadence.li_carousel + (tenant.cadence.ig_carousel ?? 0) === 1 ? "carrusel" : "carruseles"} de{" "}
             {tenant.cadence.carousel_slides} slides
           </div>
           <button type="submit" className="btn btn-primary btn-lg self-start">
@@ -121,9 +124,10 @@ export default async function GeneratePage({
 
           <Field label="Formato target" hint="Dónde vas a publicar este post.">
             <select name="target_format" defaultValue="ig_feed">
-              <option value="ig_feed">Instagram feed · cuadrado 1:1</option>
-              <option value="li_single">LinkedIn single · horizontal 3:2</option>
-              <option value="li_carousel">LinkedIn carrusel · 5 slides 4:5</option>
+              <option value="ig_feed">Instagram Feed · 1:1</option>
+              <option value="ig_carousel">Instagram Carrusel · 4:5 · 4 slides</option>
+              <option value="li_single">LinkedIn Post · 3:2</option>
+              <option value="li_carousel">LinkedIn Carrusel · 4:5 · 4 slides</option>
             </select>
           </Field>
 

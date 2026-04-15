@@ -2,7 +2,7 @@
 
 export type ImageEngine = "argo_photo_panel" | "html";
 export type Archetype = "authority" | "innovator" | "friend" | "rebel" | "guide";
-export type PostFormat = "ig_feed" | "li_single" | "li_carousel";
+export type PostFormat = "ig_feed" | "li_single" | "li_carousel" | "ig_carousel";
 export type SlideKind = "cover" | "content" | "cta";
 export type AssetKind = "single" | "slide";
 export type RunMode = "batch" | "single_idea";
@@ -22,12 +22,13 @@ export type PostStatus =
   | "exported"
   | "published_externally"
   | "image_failed";
-export type TemplateFormat = "ig_feed" | "li_single" | "li_carousel_slide" | "multi";
+export type TemplateFormat = "ig_feed" | "ig_carousel_slide" | "li_single" | "li_carousel_slide" | "multi";
 
 export interface Cadence {
   ig_feed: number;
   li_single: number;
   li_carousel: number;
+  ig_carousel: number;
   carousel_slides: number;
 }
 

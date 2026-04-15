@@ -19,7 +19,7 @@ export default function NewTenantPage() {
       name,
       website_url,
       image_engine,
-      cadence: { ig_feed: 4, li_single: 2, li_carousel: 2, carousel_slides: 5 },
+      cadence: { ig_feed: 2, li_single: 1, li_carousel: 1, ig_carousel: 0, carousel_slides: 4 },
     });
 
     await createNewVoiceVersion(tenant.id, {

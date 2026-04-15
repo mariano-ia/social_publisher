@@ -92,7 +92,12 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
   if (retryCount > 0) await updateRun(runId, { retry_count: retryCount });
 
   // Validate visual_template_slug per post + reassign if invalid/repeated
-  const usedByFormat: Record<PostFormat, string[]> = { ig_feed: [], li_single: [], li_carousel: [] };
+  const usedByFormat: Record<PostFormat, string[]> = {
+    ig_feed: [],
+    ig_carousel: [],
+    li_single: [],
+    li_carousel: [],
+  };
   const normalized = await Promise.all(
     parsed.posts.map(async (p) => {
       const available = await listVisualTemplatesForFormat(tenant.id, p.format);
@@ -276,16 +281,19 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
     return;
   }
 
-  // ARGO carousel → HYBRID pipeline:
+  // ARGO carousel (both li_carousel and ig_carousel) → HYBRID pipeline:
   //   - slide.kind === "cover"   → gpt-image-1 photo + ar-ig-photo HTML composite
   //     (so the cover has a real photo with the overlay panel)
   //   - slide.kind === "content" → ar-carousel-content HTML template (no photo)
   //   - slide.kind === "cta"     → ar-carousel-cta HTML template (no photo)
-  // This saves 8 gpt-image-1 calls per batch (vs. one per slide).
-  if (tenant.image_engine === "argo_photo_panel" && post.format === "li_carousel") {
+  // This saves gpt-image-1 calls (only cover hits the API).
+  if (
+    tenant.image_engine === "argo_photo_panel" &&
+    (post.format === "li_carousel" || post.format === "ig_carousel")
+  ) {
     const slides = post.slides ?? [];
     for (const slide of slides) {
-      const dims = FORMAT_DIMS.li_carousel;
+      const dims = post.format === "ig_carousel" ? FORMAT_DIMS.ig_carousel : FORMAT_DIMS.li_carousel;
 
       if (slide.kind === "cover") {
         // 1. Generate the photo
@@ -372,16 +380,16 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
   const tmpl = getHtmlTemplate(slug);
   if (!tmpl) throw new Error(`Unknown HTML template: ${slug}`);
 
-  if (post.format === "li_carousel") {
+  if (post.format === "li_carousel" || post.format === "ig_carousel") {
     const slides = post.slides ?? [];
-    // Build the teaser list for the cover: titles of slides 2..5 (content + cta)
+    // Build the teaser list for the cover: titles of content + cta slides
     const teaserTitles = slides
       .filter((s) => s.kind !== "cover")
       .map((s) => s.title ?? "")
       .filter((t) => t.length > 0);
 
     for (const slide of slides) {
-      const dims = FORMAT_DIMS.li_carousel;
+      const dims = post.format === "ig_carousel" ? FORMAT_DIMS.ig_carousel : FORMAT_DIMS.li_carousel;
       // Cover slides use yc-cover regardless of the post's assigned template.
       // Content + cta slides use the post's assigned template.
       const slideTemplate = slide.kind === "cover" ? getHtmlTemplate("yc-cover") : tmpl;

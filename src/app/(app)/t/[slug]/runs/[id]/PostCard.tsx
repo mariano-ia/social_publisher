@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { GeneratedPost, GeneratedAsset, VisualTemplate } from "@/lib/db/types";
 import { approvePost, rejectPost, changeTemplate, retryRender } from "./actions";
 import { Icon } from "@/components/Icons";
-import { formatLabel, formatPlatform, pillarLabel } from "@/lib/display";
+import { formatLabel, formatPlatform, pillarLabel, isCarouselFormat } from "@/lib/display";
 
 interface Props {
   post: GeneratedPost;
@@ -22,7 +22,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
   const [copiedFlash, setCopiedFlash] = useState(false);
   const [showCopy, setShowCopy] = useState(false);
 
-  const isCarousel = post.format === "li_carousel";
+  const isCarousel = isCarouselFormat(post.format);
   const slides = assets
     .filter((a) => a.kind === "slide")
     .sort((a, b) => (a.slide_index ?? 0) - (b.slide_index ?? 0));

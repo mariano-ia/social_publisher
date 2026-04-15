@@ -52,7 +52,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     );
     for (const asset of postAssets) {
       const buf = await fetchAsBuffer(asset.public_url);
-      if (post.format === "li_carousel" && asset.kind === "slide") {
+      if ((post.format === "li_carousel" || post.format === "ig_carousel") && asset.kind === "slide") {
         const idx = String(asset.slide_index ?? 0).padStart(2, "0");
         folder.file(`slide-${idx}.png`, buf);
       } else {

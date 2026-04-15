@@ -40,7 +40,7 @@ export default async function RunReviewPage({
   }
 
   const templatesByFormat = new Map<string, VisualTemplate[]>();
-  for (const fmt of ["ig_feed", "li_single", "li_carousel"] as const) {
+  for (const fmt of ["ig_feed", "ig_carousel", "li_single", "li_carousel"] as const) {
     templatesByFormat.set(fmt, await listVisualTemplatesForFormat(tenant.id, fmt));
   }
 
@@ -49,7 +49,8 @@ export default async function RunReviewPage({
 
   const postSlots = posts.map((p) => {
     const postAssets = assetsByPost.get(p.id) ?? [];
-    const expected = p.format === "li_carousel" ? p.slides?.length ?? 5 : 1;
+    const expected =
+      p.format === "li_carousel" || p.format === "ig_carousel" ? p.slides?.length ?? 4 : 1;
     const count = postAssets.length;
     return {
       order: p.slot_order ?? 0,
@@ -133,7 +134,8 @@ export default async function RunReviewPage({
 function computeExpectedAssets(posts: GeneratedPost[], tenant: Tenant): number {
   let total = 0;
   for (const p of posts) {
-    if (p.format === "li_carousel") total += tenant.cadence.carousel_slides;
+    if (p.format === "li_carousel" || p.format === "ig_carousel")
+      total += tenant.cadence.carousel_slides;
     else total += 1;
   }
   return total || 1;

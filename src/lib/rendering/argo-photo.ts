@@ -62,6 +62,7 @@ const PILLAR_CONTEXT: Record<string, string> = {
 
 const FORMAT_DIMENSIONS: Record<PostFormat | "carousel_slide", { size: "1024x1024" | "1024x1536" | "1536x1024"; aspect: string }> = {
   ig_feed: { size: "1024x1024", aspect: "cuadrado 1:1" },
+  ig_carousel: { size: "1024x1536", aspect: "vertical 2:3" },
   li_single: { size: "1536x1024", aspect: "horizontal 3:2" },
   li_carousel: { size: "1024x1536", aspect: "vertical 2:3" },
   carousel_slide: { size: "1024x1536", aspect: "vertical 2:3" },

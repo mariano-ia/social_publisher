@@ -112,6 +112,7 @@ export async function listVisualTemplatesForFormat(
   // Map post format to template format(s)
   const formatMap: Record<PostFormat, TemplateFormat[]> = {
     ig_feed: ["ig_feed", "multi"],
+    ig_carousel: ["ig_carousel_slide", "li_carousel_slide", "multi"],
     li_single: ["li_single", "multi"],
     li_carousel: ["li_carousel_slide", "multi"],
   };
