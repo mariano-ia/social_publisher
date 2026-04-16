@@ -14,9 +14,9 @@ import { htmlShell, escapeHtml, type ArgoTemplateProps, AR_TOKENS } from "./_sha
  * Based on frame 4:79 from Figma auto_Contenido_SMO.
  */
 export function arCarouselCta(props: ArgoTemplateProps): string {
-  const title = props.slide?.title ?? props.title ?? "Conoce el perfil conductual de tus deportistas.";
-  const subtitle = props.slide?.body ?? props.subtitle ?? "14 días gratis. Sin tarjeta de crédito.";
-  const ctaText = props.cta_text ?? "Iniciar prueba gratuita";
+  const title = props.slide?.title ?? props.title ?? "Discover your athletes' behavioral profile.";
+  const subtitle = props.slide?.body ?? props.subtitle ?? "14-day free trial. No credit card required.";
+  const ctaText = props.cta_text ?? "Start free trial";
   const total = props.total_slides ?? 5;
 
   const styles = `

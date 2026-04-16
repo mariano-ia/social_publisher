@@ -53,7 +53,7 @@ export interface ArgoTemplateProps {
   pillar?: string | null;
   pillar_display?: string | null; // Human-readable pillar name for the chip
   cta_url?: string | null;        // e.g. argomethod.com
-  cta_text?: string | null;       // e.g. "Iniciar prueba gratuita"
+  cta_text?: string | null;       // e.g. "Start free trial"
   // Carousel context
   slide?: {
     index: number;
@@ -85,9 +85,9 @@ ${opts.styles}
 export function displayPillar(pillarSlug?: string | null): string {
   if (!pillarSlug) return "ARGO METHOD";
   const map: Record<string, string> = {
-    ciencia_metodologia: "CIENCIA & MÉTODO",
-    educacion_deportiva: "PARA ENTRENADORES",
-    producto: "PRODUCTO",
+    ciencia_metodologia: "SCIENCE & METHOD",
+    educacion_deportiva: "FOR COACHES",
+    producto: "PRODUCT",
   };
   return map[pillarSlug] ?? pillarSlug.toUpperCase().replace(/_/g, " ");
 }

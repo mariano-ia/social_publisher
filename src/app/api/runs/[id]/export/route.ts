@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
+import { PDFDocument } from "pdf-lib";
 import {
   getRun,
   getPostsByRun,
@@ -50,14 +51,31 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const postAssets = (assetsByPost.get(post.id) ?? []).sort(
       (a, b) => (a.slide_index ?? 0) - (b.slide_index ?? 0),
     );
+
+    const isCarousel = post.format === "li_carousel" || post.format === "ig_carousel";
+    const slideBuffers: { buf: Buffer; width: number; height: number }[] = [];
+
     for (const asset of postAssets) {
       const buf = await fetchAsBuffer(asset.public_url);
-      if ((post.format === "li_carousel" || post.format === "ig_carousel") && asset.kind === "slide") {
+      if (isCarousel && asset.kind === "slide") {
         const idx = String(asset.slide_index ?? 0).padStart(2, "0");
         folder.file(`slide-${idx}.png`, buf);
+        slideBuffers.push({ buf, width: asset.width ?? 1080, height: asset.height ?? 1350 });
       } else {
         folder.file("image.png", buf);
       }
+    }
+
+    // Generate a combined PDF for carousel posts (LinkedIn upload)
+    if (isCarousel && slideBuffers.length > 0) {
+      const pdf = await PDFDocument.create();
+      for (const { buf, width, height } of slideBuffers) {
+        const pngImage = await pdf.embedPng(new Uint8Array(buf));
+        const page = pdf.addPage([width, height]);
+        page.drawImage(pngImage, { x: 0, y: 0, width, height });
+      }
+      const pdfBytes = await pdf.save();
+      folder.file("carousel.pdf", pdfBytes);
     }
   }
 
@@ -116,10 +134,11 @@ Generado: ${createdAt}
 Posts incluidos: ${postCount}
 
 Cada carpeta es un post:
-  - copy.txt    — copy completo listo para pegar en IG/LI (incluye hashtags + CTA)
-  - meta.json   — metadata del post (formato, pillar, template usado)
-  - image.png   — imagen del post (single)
-  - slide-NN.png — slides numerados (carruseles)
+  - copy.txt      — copy completo listo para pegar en IG/LI (incluye hashtags + CTA)
+  - meta.json     — metadata del post (formato, pillar, template usado)
+  - image.png     — imagen del post (single)
+  - slide-NN.png  — slides numerados (carruseles)
+  - carousel.pdf  — todas las slides en un PDF listo para subir a LinkedIn (solo carruseles)
 
 Recordá marcar como "publicado externamente" en la app cuando ya hayas subido cada uno,
 para que el sistema lo tenga en cuenta en el anti-repeat de la próxima generación.

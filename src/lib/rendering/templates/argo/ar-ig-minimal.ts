@@ -66,7 +66,7 @@ export function arIgMinimal(props: ArgoTemplateProps): string {
         <div class="deco-big"></div>
         <div class="deco-small"></div>
         <div class="photo">
-          ${photoUrl ? "" : '<div class="photo-placeholder">Foto / Ilustración</div>'}
+          ${photoUrl ? "" : '<div class="photo-placeholder">Photo / Illustration</div>'}
         </div>
       </div>
       <div class="content">

@@ -269,8 +269,18 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
                   ALL
                 </span>
               }
-              tooltip="Descargar los 5 slides"
+              tooltip="Descargar todos los slides (PNG)"
               onClick={handleDownloadAllSlides}
+              disabled={pending}
+            />
+          )}
+          {isCarousel && slides.length > 1 && (
+            <IconAction
+              icon={<Icon.FileText size={16} />}
+              tooltip="Descargar PDF (LinkedIn)"
+              onClick={() => {
+                window.location.href = `/api/posts/${post.id}/carousel-pdf`;
+              }}
               disabled={pending}
             />
           )}
