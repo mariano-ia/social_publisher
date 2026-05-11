@@ -159,6 +159,15 @@ export function composeSystemPrompt(ctx: ComposeContext): string {
     sections.push("");
   }
 
+  // 7.5 Audience split — emitted when the tenant uses audience-prefixed pillars
+  // (e.g. `startup_*` and `pyme_*`). Forces the LLM to honor a balanced split
+  // and assigns specific formats to specific audiences when relevant.
+  const audienceSplit = buildAudienceSplitSection(voice.pillars);
+  if (audienceSplit) {
+    sections.push(audienceSplit);
+    sections.push("");
+  }
+
   // 8. Monthly themes
   if (voice.monthly_themes.length > 0) {
     sections.push("## Temas mensuales (rotar)");
@@ -182,6 +191,27 @@ export function composeSystemPrompt(ctx: ComposeContext): string {
   sections.push(buildTemplatesSection(templates, tenant));
 
   return sections.join("\n");
+}
+
+function buildAudienceSplitSection(pillars: BrandVoiceVersion["pillars"]): string | null {
+  const hasStartup = pillars.some((p) => p.name.startsWith("startup_"));
+  const hasPyme = pillars.some((p) => p.name.startsWith("pyme_"));
+  if (!hasStartup || !hasPyme) return null;
+
+  return [
+    "## REPARTO DE AUDIENCIA — REGLA DURA",
+    "",
+    "Esta marca apunta a dos públicos en paralelo (50/50 por batch):",
+    "- **Startups B2B SaaS** → pilares con prefijo `startup_`",
+    "- **PYMEs argentinas** → pilares con prefijo `pyme_`",
+    "",
+    "Asignación de formato a audiencia:",
+    "- El **LI carousel** (5 slides) es SIEMPRE PYME — usar `pyme_case` cuando sea posible (caso antes/después con número).",
+    "- El **LI single** es SIEMPRE startup.",
+    "- Los **IG feed** se reparten: 1 startup + 1 PYME por batch.",
+    "",
+    "No desbalancees el batch a favor de una audiencia. Si te quedaste sin idea fuerte para una, sacá una más liviana antes que duplicar la otra.",
+  ].join("\n");
 }
 
 function buildHistorySection(recent: RecentPostSummary[]): string {

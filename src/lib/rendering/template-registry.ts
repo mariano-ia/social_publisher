@@ -7,6 +7,7 @@ import { ycFaqCard } from "./templates/yacare/yc-faq-card";
 import { ycReframe } from "./templates/yacare/yc-reframe";
 import { ycManifestoBlock } from "./templates/yacare/yc-manifesto-block";
 import { ycCover } from "./templates/yacare/yc-cover";
+import { ycCaseStat } from "./templates/yacare/yc-case-stat";
 import { arCarouselContent } from "./templates/argo/ar-carousel-content";
 import { arCarouselCta } from "./templates/argo/ar-carousel-cta";
 import { arSolidViolet } from "./templates/argo/ar-solid-violet";
@@ -26,6 +27,7 @@ export const HTML_TEMPLATES: Record<string, HtmlTemplateFn> = {
   "yc-reframe": ycReframe as HtmlTemplateFn,
   "yc-manifesto-block": ycManifestoBlock as HtmlTemplateFn,
   "yc-cover": ycCover as HtmlTemplateFn,
+  "yc-case-stat": ycCaseStat as HtmlTemplateFn,
   // Argo
   "ar-carousel-content": arCarouselContent as HtmlTemplateFn,
   "ar-carousel-cta": arCarouselCta as HtmlTemplateFn,
