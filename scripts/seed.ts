@@ -200,6 +200,7 @@ async function seedYacare() {
         "marketing vacío",
         "predicador",
         "condescendiente",
+        "low-tier",
       ],
       vocabulary_use: [
         "product judgment",
@@ -215,6 +216,12 @@ async function seedYacare() {
         "48 horas",
         "implementación seria",
         "beneficio concreto",
+        "operación administrativa",
+        "operación retail",
+        "operación logística B2B",
+        "estudio profesional",
+        "equipo comercial",
+        "equipo de atención al cliente",
       ],
       vocabulary_avoid: [
         "disruptivo",
@@ -232,6 +239,10 @@ async function seedYacare() {
         "es una tarde",
         "es fácil",
         "en un día",
+        "panadería",
+        "verdulería",
+        "kiosco",
+        "peluquería",
       ],
       signature_phrases: [
         "No fluff",
@@ -249,6 +260,8 @@ async function seedYacare() {
         "Asumimos siempre que el lector sabe más de su negocio que nosotros.",
         "Cuando no hay cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto.",
         "Cada beneficio va precedido por el trabajo serio que requiere implementarlo (mapeo, entrenamiento, integración, testeo). No trivializamos.",
+        "Cuando necesites referirte a una vertical, usá la FUNCIÓN o el COMPORTAMIENTO del negocio: 'operación retail', 'equipo administrativo', 'operación logística B2B', 'estudio profesional', 'operación con inventario perecedero', 'equipo comercial', 'equipo de atención al cliente'.",
+        "Para ejemplos específicos: describir por ESCALA o COMPORTAMIENTO ('un estudio con 50+ clientes activos', 'una operación que recibe 200+ consultas semanales por WhatsApp'), nunca por rubro chico.",
       ],
       donts: [
         "No spanglish forzado",
@@ -260,25 +273,27 @@ async function seedYacare() {
         "Sin casos inventados con nombres, números o porcentajes ficticios. Cero atribución a clientes que no existen.",
         "Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico.",
         "Sin trivializar la implementación. Nada de 'es una tarde de configuración', 'es fácil', 'plug-and-play'. El trabajo es real, por eso se cobra.",
+        "Sin nombres de rubros chicos (panadería, verdulería, kiosco, peluquería, 'contador' suelto). Yacaré es brand de operación profesional, no de servicios para microemprendimientos.",
+        "No posicionar a Yacaré como brand de servicios para microemprendimientos. El target son PYMEs, pero la voz es de operación profesional.",
       ],
       pillars: [
         { name: "startup_anti_pattern", weight: 1, description: "Toma contrarian sobre el ruido del mercado tech (especialmente herramientas/promesas vacías de IA), nunca contra el lector. Audiencia: startups B2B SaaS." },
         { name: "startup_process", weight: 1, description: "Paso del método Understand→Shape→Build→Learn. Cómo IA acelera operativa de discovery/delivery sin reemplazar criterio. Audiencia: startups B2B SaaS." },
         { name: "startup_reframe", weight: 1, description: "Concept flip sobre cómo se ve un problema B2B SaaS. Audiencia: startups B2B SaaS." },
         { name: "startup_objection", weight: 1, description: "FAQ con respuesta directa. Audiencia: startups B2B SaaS." },
-        { name: "pyme_proceso", weight: 2, description: "Procesos automatizables en [tipo de negocio: panadería, contador, distribuidora, agencia, etc.]. EDUCATIVO, sin casos atribuidos a clientes específicos. Cada slide del carrusel describe: (a) qué puede hacer IA hoy, (b) qué requiere implementarlo seriamente (no trivializar), (c) qué beneficio aporta cuando está bien hecho. Heavyweight para carouseles PYME. Audiencia: PYMEs argentinas." },
-        { name: "pyme_oportunidad", weight: 1, description: "Qué puede hacer IA hoy que la PYME quizá no sabe que existe. SIEMPRE framed como achievable con implementación seria, NUNCA como trivial o tarde-de-configuración. Audiencia: PYMEs argentinas." },
+        { name: "pyme_proceso", weight: 2, description: "Procesos automatizables en [CATEGORÍA FUNCIONAL: operación administrativa, operación retail, operación logística B2B, estudio profesional, equipo comercial, equipo de atención al cliente, etc. — NUNCA un rubro chico tipo panadería/verdulería/kiosco]. EDUCATIVO, sin casos atribuidos a clientes específicos. Cada slide del carrusel describe: (a) qué puede hacer IA hoy, (b) qué requiere implementarlo seriamente (no trivializar), (c) qué beneficio aporta cuando está bien hecho. Heavyweight para carouseles PYME. Audiencia: PYMEs argentinas — pero la voz es de operación profesional, no de servicio para microemprendimientos." },
+        { name: "pyme_oportunidad", weight: 1, description: "Qué puede hacer IA hoy que la operación quizá no sabe que existe. SIEMPRE framed como achievable con implementación seria, NUNCA como trivial o tarde-de-configuración. Usar categorías funcionales (operación administrativa, equipo comercial, etc.), nunca rubros chicos. Audiencia: PYMEs argentinas." },
         { name: "pyme_diagnostico", weight: 1, description: "Cómo es la auditoría/diagnóstico de IA de 48hs: qué hacemos en esas 48hs, qué entregamos, qué decidís después. NO mencionar precios — no están definidos. Audiencia: PYMEs argentinas." },
-        { name: "pyme_objection", weight: 1, description: "FAQ tipo '¿reemplaza a mi equipo?', '¿es para mi negocio?', '¿necesito equipo técnico?'. NO incluir objeciones de precio (no hay precios definidos). Audiencia: PYMEs argentinas." },
+        { name: "pyme_objection", weight: 1, description: "FAQ tipo '¿reemplaza a mi equipo?', '¿es para mi operación?', '¿necesito equipo técnico?'. NO incluir objeciones de precio (no hay precios definidos). Audiencia: PYMEs argentinas." },
       ],
       monthly_themes: [
         "Discovery vs delivery: dónde se pierde tiempo en B2B",
         "MVPs honestos: shipping menos para aprender más",
         "Cómo aceleramos discovery con IA sin saltarnos hablar con gente real",
-        "Qué puede hacer IA hoy por una PYME (que hace 12 meses no podía)",
-        "Procesos automatizables en una panadería, contador, distribuidora, agencia chica",
+        "Qué puede hacer IA hoy por una operación profesional (que hace 12 meses no podía)",
+        "Procesos automatizables en operaciones administrativas, retail, logísticas B2B, comerciales",
         "Cómo se ve una auditoría IA de 48hs",
-        "Mitos sobre IA en PYME: no reemplaza gente, multiplica horas",
+        "Mitos sobre IA: no reemplaza gente, multiplica horas",
         "Qué requiere realmente una implementación seria de IA",
       ],
       sample_copy: [
@@ -304,12 +319,12 @@ async function seedYacare() {
         {
           context: "pyme_oportunidad",
           sample:
-            "Tu WhatsApp puede contestar a las 3 AM.\n\nHace 18 meses, tener atención por WhatsApp 24/7 requería un equipo de turnos. Hoy se puede implementar con IA — y la diferencia con un bot genérico está en cómo se hace.\n\nUna implementación seria requiere:\n— Mapear las consultas reales que recibís (no las que el bot inventa)\n— Entrenar el modelo con TU información, no la genérica del LLM\n— Integrar WhatsApp Business API contra tu stack\n— Probar con casos extremos antes de soltarlo a clientes\n\nCuando está bien hecho, dejás de tener clientes esperando respuesta a la noche, los fines de semana o un feriado. Tu equipo de día responde solo lo que el bot no resuelve.\n\nMostramos qué cambió, no qué prometemos.",
+            "Tu operación puede contestar consultas a las 3 AM.\n\nHace 18 meses, tener atención por WhatsApp 24/7 requería un equipo de turnos. Hoy se puede implementar con IA — y la diferencia con un bot genérico está en cómo se hace.\n\nUna implementación seria requiere:\n— Mapear las consultas reales que recibís (no las que el bot inventa)\n— Entrenar el modelo con TU información, no la genérica del LLM\n— Integrar WhatsApp Business API contra tu stack\n— Probar con casos extremos antes de soltarlo a clientes\n\nCuando está bien hecho, dejás de tener clientes esperando respuesta a la noche, los fines de semana o un feriado. Tu equipo de día responde solo lo que el bot no resuelve.\n\nMostramos qué cambió, no qué prometemos.",
         },
         {
           context: "pyme_proceso",
           sample:
-            "CARROUSEL — Procesos automatizables en una distribuidora con IA (5 slides):\n\nSLIDE 1 (cover): \"Procesos automatizables en una distribuidora con IA\" / \"Lo que ya es posible hoy con implementaciones serias. No mágica, ingeniería.\"\n\nSLIDE 2 (yc-case-stat): Label \"POSIBLE HOY\" / Stat \"3 procesos\" / Descriptor \"automatizables en una operación de distribución sin reemplazar a tu equipo\"\n\nSLIDE 3 (yc-process-step): \"Seguimiento de pedidos por WhatsApp\" — IA puede responder '¿dónde está mi pedido?' integrándose a tu sistema de envíos en tiempo real. Requiere conectar APIs, mapear estados de entrega y entrenar respuestas con tu información operativa. Beneficio: tu equipo deja de contestar lo mismo todo el día y se enfoca en los problemas que sí requieren cabeza.\n\nSLIDE 4 (yc-process-step): \"Detección temprana de quiebres de stock\" — Cruzando inventario con patrones de consumo de cada cliente, IA puede avisar antes de que un cliente clave llame preguntando por un faltante. Requiere datos históricos limpios y conexión a tu sistema de stock. Beneficio: menos pedidos perdidos por faltantes que se ven tarde.\n\nSLIDE 5 (CTA): \"¿Querés saber qué se puede automatizar en tu operación?\" / \"Auditoría IA de 48hs.\" / \"Hablemos.\"",
+            "CARROUSEL — Procesos automatizables en una operación logística B2B con IA (5 slides):\n\nSLIDE 1 (cover): \"Procesos automatizables en una operación logística B2B con IA\" / \"Lo que ya es posible hoy con implementaciones serias. No mágica, ingeniería.\"\n\nSLIDE 2 (yc-case-stat): Label \"POSIBLE HOY\" / Stat \"3 procesos\" / Descriptor \"automatizables en una operación logística B2B sin reemplazar a tu equipo\"\n\nSLIDE 3 (yc-process-step): \"Seguimiento de pedidos por WhatsApp\" — IA puede responder '¿dónde está mi pedido?' integrándose a tu sistema de envíos en tiempo real. Requiere conectar APIs, mapear estados de entrega y entrenar respuestas con tu información operativa. Beneficio: tu equipo deja de contestar lo mismo todo el día y se enfoca en los problemas que sí requieren cabeza.\n\nSLIDE 4 (yc-process-step): \"Detección temprana de quiebres de stock\" — Cruzando inventario con patrones de consumo de cada cliente, IA puede avisar antes de que un cliente clave llame preguntando por un faltante. Requiere datos históricos limpios y conexión a tu sistema de stock. Beneficio: menos pedidos perdidos por faltantes que se ven tarde.\n\nSLIDE 5 (CTA): \"¿Querés saber qué se puede automatizar en tu operación?\" / \"Auditoría IA de 48hs.\" / \"Hablemos.\"",
         },
         {
           context: "pyme_diagnostico",
@@ -324,7 +339,7 @@ async function seedYacare() {
       ],
       language: "es-AR",
       language_rules:
-        "Español 95% rioplatense informal (voseo: 'tenés', 'sabés', 'pensá'). Permitido el slang inglés del rubro tech: 'product-market fit', 'MVP', 'stack', 'shipping', 'discovery', 'growth', 'B2B SaaS' — NO traducir estos términos. Evitar spanglish forzado.\n\nREGLA MAESTRA: el rebel apunta al ruido del mercado, NUNCA al lector. Lo que cuestionamos es el status quo, no la inteligencia de quien nos lee. Asumimos siempre que el lector sabe más de su negocio que nosotros. Lo único que aportamos es qué cambió en lo que IA puede hacer hoy. Cada post lleva al menos un ejemplo concreto (número categórico, escenario, posibilidad). Sin ejemplo, no se publica.\n\nTRES REGLAS DURAS:\n1. Sin clientes inventados. Si no tenemos cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto.\n2. Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico.\n3. Sin trivializar implementación. Cada beneficio va precedido por el trabajo serio que requiere (mapeo, entrenamiento, integración, testeo). El trabajo es real, por eso se cobra.",
+        "Español 95% rioplatense informal (voseo: 'tenés', 'sabés', 'pensá'). Permitido el slang inglés del rubro tech: 'product-market fit', 'MVP', 'stack', 'shipping', 'discovery', 'growth', 'B2B SaaS' — NO traducir estos términos. Evitar spanglish forzado.\n\nREGLA MAESTRA: el rebel apunta al ruido del mercado, NUNCA al lector. Lo que cuestionamos es el status quo, no la inteligencia de quien nos lee. Asumimos siempre que el lector sabe más de su negocio que nosotros. Lo único que aportamos es qué cambió en lo que IA puede hacer hoy. Cada post lleva al menos un ejemplo concreto (número categórico, escenario, posibilidad). Sin ejemplo, no se publica.\n\nCUATRO REGLAS DURAS:\n1. Sin clientes inventados. Si no tenemos cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto.\n2. Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico.\n3. Sin trivializar implementación. Cada beneficio va precedido por el trabajo serio que requiere (mapeo, entrenamiento, integración, testeo). El trabajo es real, por eso se cobra.\n4. Sin rubros chicos. Hablamos de categorías FUNCIONALES (operación administrativa, operación retail, operación logística B2B, estudio profesional, equipo comercial), NUNCA de panadería/verdulería/kiosco/peluquería ni 'contador' suelto. El target son PYMEs, pero la voz es de operación profesional.",
       system_prompt_override: null,
     });
     console.log("  + brand_voice_versions v1 (structured)");

@@ -181,3 +181,56 @@ Después de generar la primera tanda con v2 aparecieron dos problemas:
 
 ### Migración
 SQL: deactivate v2, insert v3 (is_active=true). v1 y v2 quedan en histórico (sin pérdida).
+
+---
+
+## Addendum — v4 (2026-05-11)
+
+Después de generar contenido con v3 apareció un problema de **posicionamiento de marca**: aunque PYMEs son el target real, mencionar rubros chicos ("panadería", "contador", "verdulería") en el contenido posiciona a Yacaré como brand de servicios para microemprendimientos. Un cliente más grande lee "Tu panadería puede pronosticar demanda" y descarta. Y la marca queda anclada al nivel más chico.
+
+### Decisión
+
+**Yacaré habla de FUNCIONES y PROCESOS, NUNCA de rubros chicos.** El target sigue siendo PYME pero la voz es de operación profesional.
+
+| ❌ Evitar | ✅ Usar |
+|---|---|
+| "panadería" | "operación retail" / "operación con inventario perecedero" |
+| "contador" | "estudio profesional" / "equipo administrativo" |
+| "verdulería" | "operación retail" |
+| "kiosco" | "punto de venta" / "operación retail" |
+| "distribuidora" | "operación logística B2B" |
+| "una panadería con 3 sucursales" | "una operación retail con 3 puntos de venta" |
+| "un contador con 50 clientes" | "un estudio que maneja 50+ clientes activos" |
+
+### Cambios en v4
+
+**`donts` nuevos (2 reglas):**
+- "Sin nombres de rubros chicos (panadería, verdulería, kiosco, peluquería, 'contador' suelto). Yacaré es brand de operación profesional, no de servicios para microemprendimientos."
+- "No posicionar a Yacaré como brand de servicios para microemprendimientos. El target son PYMEs, pero la voz es de operación profesional."
+
+**`dos` nuevos (2 reglas):**
+- "Cuando necesites referirte a una vertical, usá la FUNCIÓN o el COMPORTAMIENTO del negocio: 'operación retail', 'equipo administrativo', 'operación logística B2B', 'estudio profesional', 'operación con inventario perecedero', 'equipo comercial', 'equipo de atención al cliente'."
+- "Para ejemplos específicos: describir por ESCALA o COMPORTAMIENTO ('un estudio con 50+ clientes activos', 'una operación que recibe 200+ consultas semanales por WhatsApp'), nunca por rubro chico."
+
+**`vocabulary_use` ampliado** con las categorías funcionales: operación administrativa, operación retail, operación logística B2B, estudio profesional, equipo comercial, equipo de atención al cliente.
+
+**`vocabulary_avoid` ampliado:** + panadería, verdulería, kiosco, peluquería.
+
+**`voice_is_not` ampliado:** + low-tier.
+
+**Pillares `pyme_proceso` y `pyme_oportunidad` descripciones reescritas** para forzar el uso de categorías funcionales. Ya no listan "panadería, contador, distribuidora" como ejemplos — listan "operación administrativa, operación retail, operación logística B2B, estudio profesional, equipo comercial".
+
+**Sample `pyme_proceso`** reescrito: la "distribuidora" pasa a "operación logística B2B".
+
+**Sample `pyme_oportunidad`** reescrito: arranca "Tu operación puede contestar consultas a las 3 AM" en lugar de "Tu WhatsApp puede contestar a las 3 AM" (más sustantivo, posiciona la operación entera).
+
+**Monthly themes ajustados:** ya no listan rubros, listan categorías funcionales.
+
+**`language_rules` ahora con CUATRO REGLAS DURAS** (sumamos la regla 4: sin rubros chicos).
+
+### Lo que NO cambia respecto a v3
+- Archetype, dimensiones, audience split, cadence, visual templates, PDF download.
+- Reglas de v3 (sin clientes inventados, sin precios, sin trivializar) — se mantienen y se suma la 4 (sin rubros chicos).
+
+### Migración v4
+SQL: deactivate v3, insert v4 (is_active=true). v1, v2, v3 quedan en histórico.
