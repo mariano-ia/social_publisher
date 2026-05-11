@@ -135,3 +135,49 @@ Esto evita que Claude desbalancee el batch.
 - DB: UPDATE para volver v1 a is_active=true y v2 a false. Sin pérdida de datos.
 - Cadence: revertir tenant.cadence al snapshot de v1.
 - Template nuevo: se puede dejar registrado, no se usa si los pilares no lo piden.
+
+---
+
+## Addendum — v3 (2026-05-11)
+
+Después de generar la primera tanda con v2 aparecieron dos problemas:
+
+1. **Casos inventados.** El pillar `pyme_case` literalmente le pedía a Claude "caso antes/después con número", y Claude empezó a fabricar testimonios con clientes y porcentajes ficticios (ej. "Distribuidora mayorista — 180 clientes — 94% confirmaciones sin intervención"). Como Yacaré todavía no tiene clientes PYME documentables, esto es engañoso.
+2. **Precios.** Varios posts mencionaban "te lo decimos exacto después del diagnóstico" o comparaciones de precio. No hay precios definidos todavía — el contenido no puede insinuarlos.
+
+### Cambios en v3
+
+**Pillar reemplazado:**
+- ❌ `pyme_case` (peso 2) → invitaba a inventar casos
+- ✅ `pyme_proceso` (peso 2) — "Procesos automatizables en [tipo de negocio]". EDUCATIVO. Cada slide del carrusel debe describir (a) qué puede IA hoy, (b) qué requiere implementarlo seriamente, (c) qué beneficio aporta cuando está bien hecho. **Sin clientes atribuidos.**
+
+**Pilares ajustados (descripciones):**
+- `pyme_oportunidad` — agregada nota: "SIEMPRE framed como achievable con implementación seria, NUNCA como trivial o tarde-de-configuración".
+- `pyme_diagnostico` — eliminada referencia a precios ("NO mencionar precios — no están definidos").
+- `pyme_objection` — quitada la FAQ "¿es caro?" (no incluir objeciones de precio).
+
+**`dos` nuevos (3 reglas duras agregadas):**
+1. "Cuando no hay cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto."
+2. "Cada beneficio va precedido por el trabajo serio que requiere implementarlo (mapeo, entrenamiento, integración, testeo). No trivializamos."
+
+**`donts` nuevos:**
+- "Sin casos inventados con nombres, números o porcentajes ficticios. Cero atribución a clientes que no existen."
+- "Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico."
+- "Sin trivializar la implementación. Nada de 'es una tarde de configuración', 'es fácil', 'plug-and-play'. El trabajo es real, por eso se cobra."
+
+**`vocabulary_avoid` ampliado:** + `plug-and-play`, `es una tarde`, `es fácil`, `en un día`.
+
+**`signature_phrases` agregada:** `"No mágica, ingeniería"`.
+
+**`language_rules` reforzadas con TRES REGLAS DURAS** (sin clientes inventados, sin precios, sin trivializar implementación).
+
+**`sample_copy` reemplazada completa** con 8 ejemplos aprobados (uno por pillar). Los textos vienen de la conversación del 2026-05-11 después de revisar la primera tanda v2.
+
+### Lo que NO cambia respecto a v2
+- Archetype `rebel` y dimensiones se mantienen idénticas.
+- Audience split 50/50 (compose.ts no se toca).
+- Cadence (4 posts/batch).
+- Visual templates (yc-case-stat se mantiene pero ahora se usa para stats categóricos sobre posibilidad, no para números atribuidos a clientes ficticios).
+
+### Migración
+SQL: deactivate v2, insert v3 (is_active=true). v1 y v2 quedan en histórico (sin pérdida).

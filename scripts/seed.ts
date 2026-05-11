@@ -210,12 +210,11 @@ async function seedYacare() {
         "stack",
         "claridad",
         "horas semanales",
-        "ahorrar tiempo",
         "automatizar",
         "diagnóstico",
         "48 horas",
-        "antes/después",
-        "caso concreto",
+        "implementación seria",
+        "beneficio concreto",
       ],
       vocabulary_avoid: [
         "disruptivo",
@@ -229,20 +228,27 @@ async function seedYacare() {
         "empoderar",
         "revolución de la IA",
         "vos no sabés que",
+        "plug-and-play",
+        "es una tarde",
+        "es fácil",
+        "en un día",
       ],
       signature_phrases: [
         "No fluff",
         "We don't sell hours",
         "Mostramos qué cambió, no qué prometemos",
+        "No mágica, ingeniería",
       ],
       dos: [
         "Voseo rioplatense informal",
         "Permitido slang inglés del rubro (product-market fit, MVP, shipping, discovery)",
         "Frases cortas, directas",
         "Llamada a la acción al final cuando aplique",
-        "Cada post lleva al menos un ejemplo concreto: número, caso o escenario. Sin ejemplo, no se publica.",
+        "Cada post lleva al menos un ejemplo concreto: número categórico, escenario o posibilidad. Sin ejemplo, no se publica.",
         "El rebel apunta al ruido del mercado, NUNCA al lector.",
         "Asumimos siempre que el lector sabe más de su negocio que nosotros.",
+        "Cuando no hay cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto.",
+        "Cada beneficio va precedido por el trabajo serio que requiere implementarlo (mapeo, entrenamiento, integración, testeo). No trivializamos.",
       ],
       donts: [
         "No spanglish forzado",
@@ -251,35 +257,40 @@ async function seedYacare() {
         "No usar 'transformación digital', 'potenciar', 'empoderar', 'revolución de la IA'",
         "Nunca tratar al lector como si no entendiera. Sin 'vos no sabés que...'.",
         "Nada de manifiestos vacíos: si no hay ejemplo concreto, no se publica.",
+        "Sin casos inventados con nombres, números o porcentajes ficticios. Cero atribución a clientes que no existen.",
+        "Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico.",
+        "Sin trivializar la implementación. Nada de 'es una tarde de configuración', 'es fácil', 'plug-and-play'. El trabajo es real, por eso se cobra.",
       ],
       pillars: [
-        { name: "startup_anti_pattern", weight: 1, description: "Toma contrarian sobre el ruido del mercado tech, nunca contra el lector. Audiencia: startups B2B SaaS." },
-        { name: "startup_process", weight: 1, description: "Paso del método Understand→Shape→Build→Learn. Audiencia: startups B2B SaaS." },
+        { name: "startup_anti_pattern", weight: 1, description: "Toma contrarian sobre el ruido del mercado tech (especialmente herramientas/promesas vacías de IA), nunca contra el lector. Audiencia: startups B2B SaaS." },
+        { name: "startup_process", weight: 1, description: "Paso del método Understand→Shape→Build→Learn. Cómo IA acelera operativa de discovery/delivery sin reemplazar criterio. Audiencia: startups B2B SaaS." },
         { name: "startup_reframe", weight: 1, description: "Concept flip sobre cómo se ve un problema B2B SaaS. Audiencia: startups B2B SaaS." },
         { name: "startup_objection", weight: 1, description: "FAQ con respuesta directa. Audiencia: startups B2B SaaS." },
-        { name: "pyme_case", weight: 2, description: "Caso concreto antes/después con número (horas ahorradas, $ ganados). Ideal para carrusel. Audiencia: PYMEs argentinas." },
-        { name: "pyme_oportunidad", weight: 1, description: "Qué puede hacer IA hoy que la PYME quizá no sabe que existe. Audiencia: PYMEs argentinas." },
-        { name: "pyme_diagnostico", weight: 1, description: "Cómo es la auditoría/diagnóstico de IA de 48hs, qué se entrega. Audiencia: PYMEs argentinas." },
-        { name: "pyme_objection", weight: 1, description: "FAQ tipo '¿es caro?', '¿reemplaza gente?', '¿es para mi negocio?'. Audiencia: PYMEs argentinas." },
+        { name: "pyme_proceso", weight: 2, description: "Procesos automatizables en [tipo de negocio: panadería, contador, distribuidora, agencia, etc.]. EDUCATIVO, sin casos atribuidos a clientes específicos. Cada slide del carrusel describe: (a) qué puede hacer IA hoy, (b) qué requiere implementarlo seriamente (no trivializar), (c) qué beneficio aporta cuando está bien hecho. Heavyweight para carouseles PYME. Audiencia: PYMEs argentinas." },
+        { name: "pyme_oportunidad", weight: 1, description: "Qué puede hacer IA hoy que la PYME quizá no sabe que existe. SIEMPRE framed como achievable con implementación seria, NUNCA como trivial o tarde-de-configuración. Audiencia: PYMEs argentinas." },
+        { name: "pyme_diagnostico", weight: 1, description: "Cómo es la auditoría/diagnóstico de IA de 48hs: qué hacemos en esas 48hs, qué entregamos, qué decidís después. NO mencionar precios — no están definidos. Audiencia: PYMEs argentinas." },
+        { name: "pyme_objection", weight: 1, description: "FAQ tipo '¿reemplaza a mi equipo?', '¿es para mi negocio?', '¿necesito equipo técnico?'. NO incluir objeciones de precio (no hay precios definidos). Audiencia: PYMEs argentinas." },
       ],
       monthly_themes: [
         "Discovery vs delivery: dónde se pierde tiempo en B2B",
         "MVPs honestos: shipping menos para aprender más",
         "Cómo aceleramos discovery con IA sin saltarnos hablar con gente real",
         "Qué puede hacer IA hoy por una PYME (que hace 12 meses no podía)",
-        "Casos reales: panadería, contador, distribuidora, agencia chica",
+        "Procesos automatizables en una panadería, contador, distribuidora, agencia chica",
         "Cómo se ve una auditoría IA de 48hs",
         "Mitos sobre IA en PYME: no reemplaza gente, multiplica horas",
-        "¿Cuánto cuesta automatizar un proceso?",
+        "Qué requiere realmente una implementación seria de IA",
       ],
       sample_copy: [
         {
           context: "startup_anti_pattern",
-          sample: "Hay 4 herramientas que prometen automatizar discovery. Discovery no se automatiza. Lo que sí se acelera es la transcripción y el análisis temático de las 30 entrevistas que ya hiciste.",
+          sample:
+            "Discovery no se automatiza.\n\nHay herramientas que prometen automatizar discovery. Lo que IA puede hacer hoy es acelerar la transcripción de las 30 entrevistas que ya hiciste y cruzar patrones temáticos a mayor escala.\n\nHablar con usuarios sigue siendo manual y es donde está el valor.\n\nSi reemplazás la conversación, no estás acelerando discovery: estás eliminándolo y quedándote con dashboards más rápidos sobre nada.\n\nWe don't sell hours.",
         },
         {
           context: "startup_process",
-          sample: "Step 01 — Understand. Antes que exista un solo pixel, mapeamos usuarios, problema y dirección. Con IA aceleramos análisis de transcripts, sin saltarnos hablar con gente real.",
+          sample:
+            "Step 01 — Understand: dónde IA aporta en discovery.\n\nAntes de un solo pixel, hablás con usuarios. Las 30 entrevistas que vas a hacer este trimestre son donde está la señal — el problema operativo es procesarlas a tiempo sin perder matiz.\n\nTres cosas que IA acelera:\n1. Transcripción — de horas a minutos por entrevista, con hablantes y timestamps.\n2. Análisis temático cruzado — qué patrones se repiten entre 30 personas a lo largo de 6 semanas.\n3. Síntesis accionable — hallazgos listos para producto sin pasar por una doc de 40 páginas.\n\nLo que NO acelera: hablar con la gente. Esa parte sigue siendo manual y ahí está la mayor parte del valor.\n\nWe don't sell hours. Vendemos discovery que sirve para tomar decisiones de producto.",
         },
         {
           context: "startup_reframe",
@@ -287,28 +298,33 @@ async function seedYacare() {
         },
         {
           context: "startup_objection",
-          sample: "¿Pueden trabajar con nuestro equipo interno? Sí. Nos integramos directo con founders, devs y product. Sin pisarse.",
-        },
-        {
-          context: "pyme_case",
-          sample: "Estudio contable, 50 clientes, 6hs semanales clasificando facturas. Bot conectado al mail clasifica 600 facturas/mes con 94% de exactitud. Hoy revisan 36 minutos.",
+          sample:
+            "¿Pueden trabajar con nuestro equipo interno? Sí. Nos integramos directo con founders, devs y product. Sin pisarse.",
         },
         {
           context: "pyme_oportunidad",
-          sample: "Hace 18 meses, atender FAQs en WhatsApp 24/7 era un equipo. Hoy es una tarde de configuración con WhatsApp Business API y un modelo entrenado en tu información.",
+          sample:
+            "Tu WhatsApp puede contestar a las 3 AM.\n\nHace 18 meses, tener atención por WhatsApp 24/7 requería un equipo de turnos. Hoy se puede implementar con IA — y la diferencia con un bot genérico está en cómo se hace.\n\nUna implementación seria requiere:\n— Mapear las consultas reales que recibís (no las que el bot inventa)\n— Entrenar el modelo con TU información, no la genérica del LLM\n— Integrar WhatsApp Business API contra tu stack\n— Probar con casos extremos antes de soltarlo a clientes\n\nCuando está bien hecho, dejás de tener clientes esperando respuesta a la noche, los fines de semana o un feriado. Tu equipo de día responde solo lo que el bot no resuelve.\n\nMostramos qué cambió, no qué prometemos.",
+        },
+        {
+          context: "pyme_proceso",
+          sample:
+            "CARROUSEL — Procesos automatizables en una distribuidora con IA (5 slides):\n\nSLIDE 1 (cover): \"Procesos automatizables en una distribuidora con IA\" / \"Lo que ya es posible hoy con implementaciones serias. No mágica, ingeniería.\"\n\nSLIDE 2 (yc-case-stat): Label \"POSIBLE HOY\" / Stat \"3 procesos\" / Descriptor \"automatizables en una operación de distribución sin reemplazar a tu equipo\"\n\nSLIDE 3 (yc-process-step): \"Seguimiento de pedidos por WhatsApp\" — IA puede responder '¿dónde está mi pedido?' integrándose a tu sistema de envíos en tiempo real. Requiere conectar APIs, mapear estados de entrega y entrenar respuestas con tu información operativa. Beneficio: tu equipo deja de contestar lo mismo todo el día y se enfoca en los problemas que sí requieren cabeza.\n\nSLIDE 4 (yc-process-step): \"Detección temprana de quiebres de stock\" — Cruzando inventario con patrones de consumo de cada cliente, IA puede avisar antes de que un cliente clave llame preguntando por un faltante. Requiere datos históricos limpios y conexión a tu sistema de stock. Beneficio: menos pedidos perdidos por faltantes que se ven tarde.\n\nSLIDE 5 (CTA): \"¿Querés saber qué se puede automatizar en tu operación?\" / \"Auditoría IA de 48hs.\" / \"Hablemos.\"",
         },
         {
           context: "pyme_diagnostico",
-          sample: "Auditoría IA de 48hs: 90 minutos de charla, miramos 3 procesos, te entregamos PDF con qué automatizar, qué dejar como está, y cuánto cuesta cada cosa.",
+          sample:
+            "Cómo se ve una auditoría IA de 48hs.\n\nDía 1 — 90 minutos de charla con vos y tu equipo. Miramos 3 procesos: cuáles son los que más tiempo se llevan, dónde están los cuellos repetitivos, qué información ya tenés digitalizada.\n\nDía 2 — Te entregamos un PDF con:\n— Qué procesos vale la pena automatizar con IA hoy\n— Qué requiere cada implementación seria (data, integraciones, tiempo)\n— Qué dejar como está porque IA no aporta\n\nDespués vos decidís. Si te cierra avanzar, lo hablamos. Si no, te quedaste con un mapa claro de qué se puede hacer en tu operación.",
         },
         {
           context: "pyme_objection",
-          sample: "'¿Es caro?' Depende. Un bot de FAQs en WhatsApp arranca en menos de lo que cuesta una persona part-time un mes. Te lo decimos exacto después del diagnóstico.",
+          sample:
+            "¿IA reemplaza a mi equipo? No.\n\nUna implementación seria automatiza tareas repetitivas: clasificar facturas, contestar consultas frecuentes, cruzar inventario con consumo. Tu equipo deja de hacer copy-paste y se enfoca en lo que sí requiere criterio: negociar con un cliente, resolver una excepción, tomar una decisión.\n\nLas operaciones que más se benefician con IA son las que tienen más gente haciendo lo mismo todos los días, no menos.",
         },
       ],
       language: "es-AR",
       language_rules:
-        "Español 95% rioplatense informal (voseo: 'tenés', 'sabés', 'pensá'). Permitido el slang inglés del rubro tech: 'product-market fit', 'MVP', 'stack', 'shipping', 'discovery', 'growth', 'B2B SaaS' — NO traducir estos términos. Evitar spanglish forzado.\n\nREGLA MAESTRA: el rebel apunta al ruido del mercado, NUNCA al lector. Lo que cuestionamos es el status quo, no la inteligencia de quien nos lee. Asumimos siempre que el lector sabe más de su negocio que nosotros. Lo único que aportamos es qué cambió en lo que IA puede hacer hoy. Cada post lleva al menos un ejemplo concreto (número, caso, escenario). Sin ejemplo, no se publica.",
+        "Español 95% rioplatense informal (voseo: 'tenés', 'sabés', 'pensá'). Permitido el slang inglés del rubro tech: 'product-market fit', 'MVP', 'stack', 'shipping', 'discovery', 'growth', 'B2B SaaS' — NO traducir estos términos. Evitar spanglish forzado.\n\nREGLA MAESTRA: el rebel apunta al ruido del mercado, NUNCA al lector. Lo que cuestionamos es el status quo, no la inteligencia de quien nos lee. Asumimos siempre que el lector sabe más de su negocio que nosotros. Lo único que aportamos es qué cambió en lo que IA puede hacer hoy. Cada post lleva al menos un ejemplo concreto (número categórico, escenario, posibilidad). Sin ejemplo, no se publica.\n\nTRES REGLAS DURAS:\n1. Sin clientes inventados. Si no tenemos cliente real para citar, hablamos de 'lo que es posible hoy' sin atribuirlo a un negocio concreto.\n2. Sin precios. No están definidos. Si la audiencia los necesita, los conversamos en el diagnóstico.\n3. Sin trivializar implementación. Cada beneficio va precedido por el trabajo serio que requiere (mapeo, entrenamiento, integración, testeo). El trabajo es real, por eso se cobra.",
       system_prompt_override: null,
     });
     console.log("  + brand_voice_versions v1 (structured)");
