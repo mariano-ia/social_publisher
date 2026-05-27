@@ -2,6 +2,13 @@
 
 Date: 2026-05-27
 Status: Fase A implementada. Arquitectura revisada (Blotato = solo publicador). Fase B pendiente de plan.
+Idioma de salida: **inglés** (todo el contenido social de Argo es en inglés; este doc de planeamiento está en español).
+
+> Nota de idioma: el contenido social de Argo se publica en **inglés** (coincide con la
+> config histórica de social-publisher: Argo -> "en"). El producto argomethod.com es en
+> español, pero NO se mezcla con lo social. Los nombres y briefs canónicos de las
+> franquicias viven en inglés en `src/lib/franchises/argo.ts`. Los ejemplos en español más
+> abajo son ilustrativos del ángulo, no del copy literal.
 
 ## Why
 
@@ -60,8 +67,9 @@ reglas de copy del proyecto Argo):
 - Lenguaje probabilístico ("tiende a", "suele", "es probable que").
 - Sin etiquetas rígidas ni diagnósticos definitivos.
 - Sin "talento", "ganar", "errores", "control", "dominación", "rígido", "débil".
-- Español latam neutro, **tuteo, nunca voseo**.
-- Sin guiones (em dash, en dash) en copy de usuario.
+- **Idioma de salida: inglés natural y claro** (no español). Las reglas de tuteo/voseo del
+  producto NO aplican al contenido social.
+- Sin guiones (em dash, en dash) en el copy publicado.
 - Sin emojis en imagen/video; en captions también se mantienen fuera por consistencia.
 - Glosario: Odisea (no test/juego), Perfil (no diagnóstico), Adulto acompañante.
 - Sitio oficial: argomethod.com (no inventar variantes en español).
