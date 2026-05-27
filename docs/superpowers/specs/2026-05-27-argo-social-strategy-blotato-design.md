@@ -1,7 +1,7 @@
-# Argo Method — Estrategia social v2 (consumidor) + publicación autónoma vía Blotato
+# Argo Method — Estrategia social v2 (consumidor) + publicación autónoma
 
 Date: 2026-05-27
-Status: Approved (design), pending implementation plan
+Status: Fase A implementada. Arquitectura revisada (Blotato = solo publicador). Fase B pendiente de plan.
 
 ## Why
 
@@ -9,17 +9,26 @@ La voz social actual de Argo es "profesional pero humana", diseñada para B2B en
 LinkedIn (clubes, federaciones, entrenadores). El objetivo cambia: queremos
 **construir marca y comunidad** en plataformas de consumidor (Instagram + TikTok),
 hablándole a una audiencia mixta de **padres y entrenadores**, con publicación
-**autónoma** vía Blotato pero con un checkpoint humano antes de publicar.
+**autónoma** pero con un checkpoint humano antes de publicar.
 
 Esto exige repensar tres cosas a la vez:
 1. El tono y el sistema editorial (de B2B a consumidor, sin perder la sensibilidad).
 2. El formato (sumar video vertical faceless, no solo imágenes estáticas).
 3. La distribución (de "export ZIP + publicar a mano" a "generar, aprobar, publicar solo").
 
-El hallazgo clave del relevamiento: **Blotato genera los videos y carruseles él mismo**
-(templates de IA) además de publicar. Por lo tanto NO construimos un renderizador de
-video propio. social-publisher pasa a ser el "cerebro" (voz de marca + franquicias) y
-Blotato el "taller + publicador". Eso hace el build mucho más liviano.
+### Decisión de arquitectura (revisada 2026-05-27)
+**Blotato se usa solo como publicador** (subir el asset, agendar y publicar a IG/TikTok),
+NO como generador. Los visuales los genera nuestro propio pipeline:
+- **Carruseles**: puppeteer (HTML→PNG), como social-publisher ya hace hoy, con templates
+  nuevos de franquicia y el branding de Argo. Costo efectivo cero, control tipográfico total.
+- **Reels**: **kie.ai** (Veo/Kling, pago por uso), alimentado por las escenas que genera el
+  cerebro (script + image_prompt por escena).
+
+Por qué se descartó que Blotato genere los visuales: su generación de video encadena voz
++ modelo de imagen + render y quema créditos por pieza (a ~4 reels/semana, opaco y caro).
+Usar Blotato solo para publicar preserva sus créditos para lo barato y confiable, y nos da
+control total del partido gráfico. social-publisher = cerebro (voz + franquicias) + taller
+(render); Blotato = publicador.
 
 ## Decisiones de estrategia (núcleo editorial)
 
@@ -53,8 +62,9 @@ reglas de copy del proyecto Argo):
 - Sin "talento", "ganar", "errores", "control", "dominación", "rígido", "débil".
 - Español latam neutro, **tuteo, nunca voseo**.
 - Sin guiones (em dash, en dash) en copy de usuario.
-- Sin emojis en imagen/video (limitación de render histórica; en captions se evalúa aparte).
+- Sin emojis en imagen/video; en captions también se mantienen fuera por consistencia.
 - Glosario: Odisea (no test/juego), Perfil (no diagnóstico), Adulto acompañante.
+- Sitio oficial: argomethod.com (no inventar variantes en español).
 
 ### Pilares de contenido (adaptados a consumidor)
 1. **Vínculo** (padres) -> registro cálido
@@ -68,11 +78,11 @@ Esto es lo que permite generación autónoma con identidad de marca consistente.
 
 | Franquicia | Pilar | Tono | Formato | Plataforma |
 |---|---|---|---|---|
-| Carta a un papá deportivo | Vínculo | Cálido | Reel + carrusel | IG + TikTok |
+| Carta a un papá deportivo | Vínculo | Cálido | Reel | IG + TikTok |
 | Mito vs Dato | Mitos | Directo | Reel (comparación) | IG + TikTok |
 | Cómo funciona la mente de... | Método | Revelador | Carrusel | IG |
 | 60 segundos de método | Método | Revelador | Reel corto | IG + TikTok |
-| El gesto que cambia todo | Vínculo (padres + entrenadores) | Cálido/práctico | Reel + carrusel | IG + TikTok |
+| El gesto que cambia todo | Vínculo (padres + entrenadores) | Cálido/práctico | Reel | IG + TikTok |
 | Detrás de la Odisea | Producto | Cálido/curioso | Carrusel | IG (quincenal) |
 
 Ejemplos de ángulo (espíritu, no copy final):
@@ -85,23 +95,24 @@ Ejemplos de ángulo (espíritu, no copy final):
 
 ## Decisiones de operación
 
-### Mapeo franquicia -> template nativo de Blotato
-Esto hace el build liviano: no renderizamos video; elegimos template y le pasamos contenido.
+### Render de cada franquicia
+Los visuales los genera nuestro pipeline. Blotato no renderiza nada.
 
-| Franquicia | Template Blotato | Tipo |
+| Franquicia | Render | Tipo |
 |---|---|---|
-| Carta a un papá deportivo | AI Story Video (`/base/v2/ai-story-video/...`) escenas + imagen IA + subtítulos, 9:16 | Reel |
-| Mito vs Dato | When X then Y (`/base/v2/images-with-text/c9892c3b...`) comparación arriba/abajo | Reel/slideshow |
-| Cómo funciona la mente de... | Tutorial Carousel (`/base/v2/tutorial-carousel/...`) intro + slides + CTA | Carrusel |
-| 60 segundos de método | AI Story Video (corto, subtítulos) | Reel |
-| El gesto que cambia todo | Image Slideshow with Prominent Text (`/base/v2/images-with-text/0ddb8655...`) | Reel/carrusel |
-| Detrás de la Odisea | Instagram Carousel Slideshow (`53cfec04...`) imágenes IA | Carrusel |
+| Carta a un papá deportivo | kie.ai (video 9:16) | Reel |
+| Mito vs Dato | kie.ai (video 9:16) | Reel |
+| Cómo funciona la mente de... | puppeteer (template franquicia, 4:5) | Carrusel |
+| 60 segundos de método | kie.ai (video 9:16) | Reel |
+| El gesto que cambia todo | kie.ai (video 9:16) | Reel |
+| Detrás de la Odisea | puppeteer (template franquicia, 4:5) | Carrusel |
 
-Notas de mapeo:
-- Los templates aceptan colores y fuente, así que se aplica el branding de Argo (violeta de marca).
-- Reels = aspectRatio 9:16. Carruseles = 4:5 (formato feed IG).
-- Las franquicias marcadas "Reel + carrusel" tienen el reel como formato primario; el
-  carrusel es variante opcional para rotar. El calendario v1 fija un solo formato por día.
+Notas:
+- **Carruseles**: templates nuevos de franquicia en el render existente (HTML→PNG), con la
+  paleta y la fuente de Argo (violeta de marca). 4:5, slides cover/content/cta.
+- **Reels**: kie.ai genera el video 9:16 a partir de las escenas del cerebro (script +
+  image_prompt por escena). El modelo concreto (Veo/Kling) y si lleva voz/subtítulos se
+  define en el visual spike. El cerebro ya produce ese material.
 
 ### Calendario semanal (cadencia autónoma)
 Reels se cruzan a IG + TikTok (mismo asset 9:16). Carruseles solo IG.
@@ -119,10 +130,11 @@ Reels se cruzan a IG + TikTok (mismo asset 9:16). Carruseles solo IG.
 - Horarios por defecto pensados para padres (mediodía y noche), configurables por tenant.
 
 ### Nivel de autonomía
-- El sistema genera y **renderiza los visuales en Blotato automáticamente** (render antes
-  de revisión: ves el video/carrusel ya terminado, no un guion).
+- El sistema genera el copy y **renderiza los visuales en nuestro pipeline** (puppeteer para
+  carruseles, kie.ai para reels) automáticamente. Render antes de revisión: ves la pieza ya
+  terminada, no un guion.
 - **Checkpoint humano obligatorio**: el batch queda "listo para revisión". Recién al
-  aprobar en el panel, Blotato agenda y publica.
+  aprobar en el panel, se empuja a Blotato para agendar y publicar.
 - Filtros automáticos previos a revisión: palabras prohibidas + sensibilidad (reúso del
   filtro existente del proyecto), strip de emojis.
 
@@ -137,9 +149,8 @@ Reels se cruzan a IG + TikTok (mismo asset 9:16). Carruseles solo IG.
   como mejora futura, no v1.
 - **Acción de batch**: "Aprobar y agendar todo" empuja a Blotato las piezas aprobadas, cada
   una en su slot del calendario.
-- La tarjeta de cada pieza muestra: preview real renderizado por Blotato (el reel se
-  reproduce, el carrusel se desliza), caption, franquicia + tono, y el slot agendado
-  (día, hora, IG/TikTok).
+- La tarjeta de cada pieza muestra: preview real renderizado (el reel se reproduce, el
+  carrusel se desliza), caption, franquicia + tono, y el slot agendado (día, hora, IG/TikTok).
 
 ## Arquitectura de sistema
 
@@ -148,56 +159,62 @@ Reels se cruzan a IG + TikTok (mismo asset 9:16). Carruseles solo IG.
 Cron semanal (domingo noche)
   -> Claude genera el batch (1 pieza por franquicia, con voz + tono + anti-repetición)
   -> filtros automáticos (palabras prohibidas + sensibilidad + strip emojis)
-  -> social-publisher llama blotato_create_visual por pieza (render antes de revisión)
-  -> blotato_get_visual_status hasta que el render esté listo, guarda la URL del asset
-  -> estado del run: "ready_for_review"
+  -> render por pieza:
+       carrusel -> puppeteer (template de franquicia, branding Argo)
+       reel     -> kie.ai (video 9:16 desde las escenas), poll hasta listo
+  -> sube los assets a Supabase Storage; estado del run: "ready_for_review"
   -> email resumen (Resend) con las piezas + link al panel
   -> el usuario entra, ve los previews ya renderizados, aprueba / rechaza / regenera
-  -> al "Aprobar y agendar todo": blotato_create_post agendado al slot del calendario
-     (Argo IG + TikTok)
+  -> al "Aprobar y agendar todo":
+       blotato_create_source (sube/registra el asset en Blotato)
+       blotato_create_post con scheduledTime al slot del calendario (Argo IG + TikTok)
   -> Blotato publica durante la semana
   -> se marca published_externally (alimenta el anti-repeat de la próxima generación)
 ```
 
 ### Componentes a construir
-1. **Brand voice de Argo v2**: nuevo system prompt (reemplaza `argo-legacy.ts`, el prompt
-   B2B). Incluye posicionamiento, 3 registros de tono, pilares de consumidor, franquicias,
-   glosario y lista negra. Se carga como nueva `brand_voice_versions` activa del tenant Argo.
-2. **Modelo de franquicias**: cada slot del batch se asocia a una franquicia (pilar + tono
-   + template Blotato + plataforma destino). Define la "cadencia" como lista de franquicias.
-3. **Schema de contenido por franquicia**: extender el schema de generación para soportar
-   "escenas" de reel (texto/script + prompt de imagen IA por escena) además de slides de
-   carrusel. La forma del output depende del template de la franquicia.
-4. **Integración Blotato** (reemplaza el export ZIP):
+1. **[HECHO en Fase A] Brand voice de Argo v2**: nuevo system prompt (reemplaza el rol de
+   `argo-legacy.ts`). Posicionamiento, 3 registros de tono, pilares de consumidor, glosario,
+   lista negra, dominio fijado.
+2. **[HECHO en Fase A] Modelo de franquicias + schema de contenido**: cada slot del batch es
+   una franquicia (pilar + tono + formato + plataformas); schema con escenas de reel
+   (script + image_prompt) y slides de carrusel. (`Franchise.blotatoTemplateId` queda como
+   metadata sin uso; Fase B agregará el target de render real: template puppeteer / params kie.ai.)
+3. **Render de reels con kie.ai**: integración de la API de kie.ai. Toma las escenas (script
+   + image_prompt) y produce un video 9:16. Polling de estado, guardar el asset. Requiere la
+   API key de kie.ai en `.env.local` de social-publisher (hoy NO está; existe en otro
+   proyecto del ecosistema, hay que copiarla acá).
+4. **Templates de carrusel de franquicia (puppeteer)**: nuevos templates HTML con branding
+   Argo para "Cómo funciona la mente de..." y "Detrás de la Odisea" (cover/content/cta, 4:5).
+5. **Integración Blotato (solo publicar, reemplaza el export ZIP)**:
    - Config de cuentas: mapear tenant -> accountId de IG + TikTok de Argo en Blotato.
-   - `blotato_create_visual` con el template y los inputs derivados del contenido generado.
-   - `blotato_get_visual_status` (polling) para esperar el render.
+   - `blotato_create_source` para registrar el asset renderizado.
    - `blotato_create_post` con scheduledTime según el slot del calendario.
    - Marcar `published_externally` al confirmar.
-5. **Config de calendario/cadencia por tenant**: día + franquicia + plataformas + horario.
-6. **Panel de revisión evolucionado**: muestra el preview real renderizado por Blotato
-   por pieza, con acciones aprobar / rechazar / regenerar (nota de feedback opcional) y la
-   acción de batch "Aprobar y agendar todo" que dispara el push a Blotato.
-7. **Email resumen (Resend)**: al quedar el run "ready_for_review", envía un email con las
-   piezas de la semana y un link directo al panel.
+6. **Config de calendario/cadencia por tenant**: día + franquicia + plataformas + horario.
+7. **Panel de revisión evolucionado**: preview real por pieza, acciones aprobar / rechazar /
+   regenerar (nota de feedback) y la acción de batch "Aprobar y agendar todo".
+8. **Email resumen (Resend)**: al quedar el run "ready_for_review", envía el email con las
+   piezas y el link al panel.
 
 ### Qué aporta Blotato (no se construye)
-- Generación de video faceless (AI Story Video con escenas, imagen IA, subtítulos).
-- Generación de carruseles (Tutorial Carousel, IG Carousel Slideshow, comparación When X then Y).
-- Publicación y agendado nativo a IG + TikTok.
+- Publicación y agendado nativo a IG + TikTok (su rol único).
 - Analítica de publicaciones.
+
+(Blotato NO genera visuales en esta arquitectura.)
 
 ## Prerrequisitos y riesgos
 
-1. **Cuentas de Argo en Blotato (bloqueante)**: hoy solo están conectadas IG/TikTok de
-   `storyhunt.city` y la página de LinkedIn de Argo. Falta conectar la cuenta propia de
-   Instagram y de TikTok de Argo Method. Lo hace el usuario desde el panel de Blotato.
-   Sin esto no se puede publicar contenido de Argo en IG/TikTok.
-2. **Voz en off en español**: las voces de Blotato (ElevenLabs) listadas están etiquetadas
-   con acentos anglo. Decisión para v1: **reels solo con subtítulos, sin voz en off**.
-   Testear calidad de voz en español antes de activarla.
-3. **Costo de generación**: cada `create_visual` consume créditos de Blotato más modelos de
-   imagen IA. La cadencia de ~5 piezas/semana acota el costo; revisar límites del plan.
+1. **Cuentas de Argo en Blotato (bloqueante para publicar)**: hoy solo están conectadas
+   IG/TikTok de `storyhunt.city` y la página de LinkedIn de Argo. Falta conectar la cuenta
+   propia de Instagram y de TikTok de Argo Method. Lo hace el usuario desde el panel de
+   Blotato. No bloquea el render ni el visual spike, solo la publicación.
+2. **Costo de kie.ai**: cada reel es una generación de video paga en kie.ai. ~4 reels/semana.
+   Costo predecible y bajo control (a diferencia de los créditos opacos de Blotato). Los
+   carruseles (puppeteer) no tienen costo por pieza.
+3. **Voz / audio en reels**: a definir en el visual spike. kie.ai (p.ej. Veo) puede generar
+   audio/voz nativa en español, lo que resuelve la limitación de las voces anglo de Blotato.
+   Alternativa: reels con subtítulos sin voz.
 4. **Sensibilidad del contenido**: al hablar de niños, el checkpoint humano se mantiene
    hasta validar consistencia de calidad. No pasar a full-auto sin demostrar calidad.
 
@@ -210,25 +227,20 @@ Cron semanal (domingo noche)
 
 ## Fuera de alcance (v1)
 - LinkedIn y otras plataformas (Threads, YouTube). Expansión futura.
-- Voz en off en español (subtítulos primero).
 - Full-auto sin checkpoint (evolución futura por confianza demostrada).
 - Persona a cámara / talking-head real (no automatizable).
-- Renderizador de video propio (Blotato lo cubre).
+- Que Blotato genere los visuales (descartado por costo/control).
 
-## Descomposición sugerida para implementación
-El build puede dividirse en fases independientes:
-- **Fase A — Voz y franquicias**: brand voice v2 + modelo de franquicias + schema de
-  contenido. Es la base creativa; se puede validar generando texto antes de tocar Blotato.
-- **Visual spike (checkpoint de partido gráfico)**: antes de construir el pipeline de la
-  Fase B, tomar 1 reel + 1 carrusel del contenido ya validado en la Fase A y renderizarlos
-  reales vía `blotato_create_visual` con los colores y la fuente de Argo (violeta de marca).
-  El usuario aprueba la dirección gráfica antes de seguir. Importante: `create_visual` NO
-  requiere las cuentas de Argo conectadas (eso es solo para publicar), así que este
-  checkpoint se puede hacer sin resolver el prerrequisito bloqueante.
-- **Fase B — Integración Blotato**: cuentas, create_visual, create_post, panel aprobar/agendar.
-- **Fase C — Autonomía**: cron semanal + calendario + filtros previos a revisión + email
-  resumen (Resend). El panel de revisión evolucionado (preview Blotato + aprobar/agendar)
-  va con la Fase B.
+## Descomposición de implementación
+- **Fase A — Voz y franquicias [HECHA]**: brand voice v2 + modelo de franquicias + schema de
+  contenido + generador + script de preview. Validada con `npm run preview:argo` (32 tests).
+  Vive en `main` de social-publisher.
+- **Visual spike (checkpoint de partido gráfico)**: tomar 1 carrusel (puppeteer, template de
+  franquicia con branding Argo) + 1 reel (kie.ai, desde las escenas generadas) y mostrarlos
+  reales para que el usuario apruebe la dirección gráfica. No requiere cuentas de Blotato ni
+  consume créditos de Blotato. Define el modelo kie.ai y el look de los carruseles.
+- **Fase B — Render + publicación**: integración kie.ai (reels) + templates de carrusel +
+  integración Blotato (create_source + create_post) + panel de revisión + email resumen.
+- **Fase C — Autonomía**: cron semanal + calendario + filtros previos a revisión.
 
-Cada fase es un plan de implementación propio. La Fase A se puede empezar sin los
-prerrequisitos de Blotato resueltos.
+Cada fase es un plan de implementación propio.
