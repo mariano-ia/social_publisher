@@ -13,8 +13,8 @@ describe("ARGO_FRANCHISES", () => {
 
   it("every franchise has valid pillar, tone, format and units > 0", () => {
     for (const f of ARGO_FRANCHISES) {
-      expect(["vinculo", "metodo", "mitos", "producto"]).toContain(f.pillar);
-      expect(["calido", "revelador", "directo"]).toContain(f.tone);
+      expect(["bond", "method", "myths", "product"]).toContain(f.pillar);
+      expect(["warm", "revealing", "direct"]).toContain(f.tone);
       expect(["reel", "carousel"]).toContain(f.format);
       expect(f.units).toBeGreaterThan(0);
       expect(f.platforms.length).toBeGreaterThan(0);
@@ -22,10 +22,8 @@ describe("ARGO_FRANCHISES", () => {
     }
   });
 
-  it("briefs and names contain no voseo and no em dashes", () => {
-    const voseo = /\b(podés|querés|tenés|hacés|mirá|hacé|poné|dejá|sos|acá)\b/i;
+  it("briefs and names contain no em dashes", () => {
     for (const f of ARGO_FRANCHISES) {
-      expect(f.brief).not.toMatch(voseo);
       expect(f.brief).not.toContain("—");
       expect(f.name).not.toContain("—");
     }
@@ -39,5 +37,15 @@ describe("ARGO_WEEKLY_FRANCHISES", () => {
     for (const slug of ARGO_WEEKLY_FRANCHISES) {
       expect(known.has(slug)).toBe(true);
     }
+  });
+
+  it("uses the expected English slugs", () => {
+    expect(ARGO_WEEKLY_FRANCHISES).toEqual([
+      "60-seconds-of-method",
+      "letter-to-a-sports-parent",
+      "inside-the-mind",
+      "myth-vs-fact",
+      "the-small-shift",
+    ]);
   });
 });

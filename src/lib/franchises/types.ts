@@ -1,7 +1,7 @@
-export type ToneRegister = "calido" | "revelador" | "directo";
+export type ToneRegister = "warm" | "revealing" | "direct";
 export type FranchiseFormat = "reel" | "carousel";
 export type Platform = "instagram" | "tiktok";
-export type FranchisePillar = "vinculo" | "metodo" | "mitos" | "producto";
+export type FranchisePillar = "bond" | "method" | "myths" | "product";
 
 /**
  * A named recurring content series. `blotatoTemplateId` is metadata consumed in

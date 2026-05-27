@@ -17,15 +17,15 @@ export interface ComposeFranchiseContext {
 export function composeFranchiseSystemPrompt(ctx: ComposeFranchiseContext): string {
   const sections: string[] = [ctx.voicePrompt, ""];
 
-  sections.push("## Franquicias de esta tanda");
+  sections.push("## Franchises in this batch");
   sections.push(
-    "Genera exactamente una pieza por franquicia, en este orden. Respeta el registro de tono y el formato de cada una.",
+    "Generate exactly one piece per franchise, in this order. Respect each one's tone register and format.",
   );
   sections.push("");
   ctx.franchises.forEach((f, i) => {
     const units = f.format === "reel" ? `${f.units} scenes` : `${f.units} slides`;
     sections.push(
-      `${i + 1}. [${f.slug}] "${f.name}" — pilar: ${f.pillar} · tono: ${f.tone} · formato: ${f.format} (${units})`,
+      `${i + 1}. [${f.slug}] "${f.name}" — pillar: ${f.pillar} · tone: ${f.tone} · format: ${f.format} (${units})`,
     );
     sections.push(`   Brief: ${f.brief}`);
   });
@@ -38,15 +38,15 @@ export function composeFranchiseSystemPrompt(ctx: ComposeFranchiseContext): stri
 
 function buildHistorySection(recent: FranchiseRecentPost[]): string {
   if (recent.length === 0) {
-    return "## Publicaciones recientes\n(Ninguna todavia. Esta es la primera tanda.)";
+    return "## Recent posts\n(None yet. This is the first batch.)";
   }
-  const lines = ["## Publicaciones recientes — NO REPETIR tema ni titular similar"];
+  const lines = ["## Recent posts — DO NOT REPEAT topic or similar headline"];
   recent.forEach((p) => {
     const date = p.created_at.split("T")[0];
-    lines.push(`- [${date}] "${p.title ?? "(sin titulo)"}" — tema: ${p.topic ?? "—"}`);
+    lines.push(`- [${date}] "${p.title ?? "(no title)"}" — topic: ${p.topic ?? "(none)"}`);
   });
   lines.push("");
-  lines.push("REGLA DURA: no repitas el mismo tema, angulo ni titular similar a los de esta lista.");
+  lines.push("HARD RULE: do not repeat the same topic, angle or a headline similar to those in this list.");
   return lines.join("\n");
 }
 
@@ -55,31 +55,31 @@ export function buildFranchiseUserPrompt(franchises: Franchise[]): string {
   franchises.forEach((f, i) => {
     const shape =
       f.format === "reel"
-        ? `${f.units} scenes (cada scene: {index, script, image_prompt}); script es texto corto en pantalla, image_prompt describe la imagen de fondo`
-        : `${f.units} slides (cada slide: {index, kind, title, body}); orden: cover, content..., cta`;
+        ? `${f.units} scenes (each scene: {index, script, image_prompt}); script is short on-screen text, image_prompt describes the background image`
+        : `${f.units} slides (each slide: {index, kind, title, body}); order: cover, content..., cta`;
     lines.push(`${i + 1}. franchise_slug="${f.slug}" · format="${f.format}" · ${shape}`);
   });
 
-  return `Genera ahora la tanda de esta semana: una pieza por franquicia, respetando voz, tono, pilar y reglas de no repeticion.
+  return `Generate the weekly batch now: one piece per franchise, following the voice, tone, pillar and no-repeat rules.
 
-PROHIBIDO: ningun campo puede contener emojis, iconos ni simbolos unicode decorativos. Sin excepciones.
+PROHIBITED: no field may contain emojis, icons or decorative unicode symbols. No exceptions.
 
-PIEZAS A GENERAR (en este orden):
+PIECES TO GENERATE (in this order):
 ${lines.join("\n")}
 
-Para cada pieza:
-1. title: el hook visual, corto (maximo 8 palabras).
-2. caption: el texto largo listo para publicar en IG/TikTok (puede tener varias lineas, usa \\n).
-3. hashtags: array de hashtags relevantes (sin emojis).
-4. cta: llamado a la accion breve (puede ser null).
-5. Si format="reel": llena scenes[] con la cantidad indicada. Si format="carousel": llena slides[] con la cantidad indicada y el orden cover, content..., cta.
+For each piece:
+1. title: the visual hook, short (max 8 words).
+2. caption: the long text ready to publish on IG/TikTok (can span multiple lines, use \\n).
+3. hashtags: array of relevant hashtags (no emojis).
+4. cta: short call to action (can be null).
+5. If format="reel": fill scenes[] with the stated count. If format="carousel": fill slides[] with the stated count in cover, content..., cta order.
 
-REGLA DE ESCAPE: escapa comillas dobles con backslash y usa \\n en vez de saltos de linea literales dentro de strings.
+ESCAPE RULE: escape double quotes with backslash and use \\n instead of literal line breaks inside strings.
 
-REGLA DURA: responde UNICAMENTE con un JSON valido (sin markdown, sin backticks, sin texto antes o despues) con este shape:
+HARD RULE: respond ONLY with valid JSON (no markdown, no backticks, no text before or after) with this shape:
 
 {
-  "run_summary": "string corto sobre el angulo general de la tanda",
-  "pieces": [ ...una pieza por franquicia, en el orden de arriba ]
+  "run_summary": "short string describing the general angle of the batch",
+  "pieces": [ ...one piece per franchise, in the order above ]
 }`;
 }

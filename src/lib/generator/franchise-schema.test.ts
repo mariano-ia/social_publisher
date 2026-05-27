@@ -3,11 +3,11 @@ import { buildFranchiseBatchSchema } from "./franchise-schema";
 import type { Franchise } from "@/lib/franchises/types";
 
 const reel: Franchise = {
-  slug: "r", name: "R", pillar: "metodo", tone: "revelador", format: "reel",
+  slug: "r", name: "R", pillar: "method", tone: "revealing", format: "reel",
   platforms: ["instagram"], blotatoTemplateId: "t", units: 2, brief: "x".repeat(30),
 };
 const carousel: Franchise = {
-  slug: "c", name: "C", pillar: "vinculo", tone: "calido", format: "carousel",
+  slug: "c", name: "C", pillar: "bond", tone: "warm", format: "carousel",
   platforms: ["instagram"], blotatoTemplateId: "t", units: 3, brief: "x".repeat(30),
 };
 

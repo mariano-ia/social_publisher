@@ -8,7 +8,7 @@ describe("composeFranchiseSystemPrompt", () => {
   const prompt = composeFranchiseSystemPrompt({
     voicePrompt: "VOICE_MARKER",
     franchises: weekly,
-    recentPosts: [{ title: "Algo viejo", topic: "tema viejo", created_at: "2026-05-01T00:00:00Z" }],
+    recentPosts: [{ title: "Old title", topic: "old topic", created_at: "2026-05-01T00:00:00Z" }],
   });
 
   it("includes the brand voice prompt verbatim", () => {
@@ -24,12 +24,12 @@ describe("composeFranchiseSystemPrompt", () => {
   });
 
   it("includes the anti-repeat history block", () => {
-    expect(prompt).toContain("Algo viejo");
-    expect(prompt.toLowerCase()).toContain("no repetir");
+    expect(prompt).toContain("Old title");
+    expect(prompt.toLowerCase()).toContain("do not repeat");
   });
 
-  it("does not inject the voseo language directive", () => {
-    expect(prompt.toLowerCase()).not.toContain("voseo cuando");
+  it("does not inject a Spanish voseo directive", () => {
+    expect(prompt.toLowerCase()).not.toContain("voseo");
   });
 });
 

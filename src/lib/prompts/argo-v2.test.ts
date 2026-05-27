@@ -3,38 +3,30 @@ import { ARGO_V2_SYSTEM_PROMPT } from "./argo-v2";
 
 describe("ARGO_V2_SYSTEM_PROMPT", () => {
   it("states the positioning line", () => {
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("comprensión");
-  });
-
-  it("declares tuteo and forbids voseo", () => {
-    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("tuteo");
-    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("voseo");
+    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("understanding");
   });
 
   it("names the three tone registers", () => {
-    for (const t of ["cálido", "revelador", "directo"]) {
+    for (const t of ["warm", "revealing", "direct"]) {
       expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain(t);
     }
   });
 
   it("includes the glossary and the blacklist", () => {
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("Odisea");
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("adulto acompañante");
-    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("talento");
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("Odyssey");
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("accompanying adult");
+    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("talent");
   });
 
-  it("requires correct Spanish orthography (accents + ñ)", () => {
-    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("ortografía");
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("ñ");
+  it("is written in English", () => {
+    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("english");
   });
 
   it("pins the real site domain so the model does not invent one", () => {
     expect(ARGO_V2_SYSTEM_PROMPT).toContain("argomethod.com");
   });
 
-  it("contains no voseo verb forms and no em dashes", () => {
-    const voseo = /\b(podés|querés|tenés|hacés|mirá|hacé|poné|dejá|sentí|vení)\b/i;
-    expect(ARGO_V2_SYSTEM_PROMPT).not.toMatch(voseo);
+  it("contains no em dashes", () => {
     expect(ARGO_V2_SYSTEM_PROMPT).not.toContain("—");
   });
 });
