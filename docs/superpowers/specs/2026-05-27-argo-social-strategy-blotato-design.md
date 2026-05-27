@@ -219,6 +219,12 @@ Cron semanal (domingo noche)
 El build puede dividirse en fases independientes:
 - **Fase A — Voz y franquicias**: brand voice v2 + modelo de franquicias + schema de
   contenido. Es la base creativa; se puede validar generando texto antes de tocar Blotato.
+- **Visual spike (checkpoint de partido gráfico)**: antes de construir el pipeline de la
+  Fase B, tomar 1 reel + 1 carrusel del contenido ya validado en la Fase A y renderizarlos
+  reales vía `blotato_create_visual` con los colores y la fuente de Argo (violeta de marca).
+  El usuario aprueba la dirección gráfica antes de seguir. Importante: `create_visual` NO
+  requiere las cuentas de Argo conectadas (eso es solo para publicar), así que este
+  checkpoint se puede hacer sin resolver el prerrequisito bloqueante.
 - **Fase B — Integración Blotato**: cuentas, create_visual, create_post, panel aprobar/agendar.
 - **Fase C — Autonomía**: cron semanal + calendario + filtros previos a revisión + email
   resumen (Resend). El panel de revisión evolucionado (preview Blotato + aprobar/agendar)
