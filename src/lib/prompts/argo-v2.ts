@@ -34,9 +34,10 @@ Cada pieza usa el registro que le indique su franquicia:
   Cuestiona la creencia, nunca al lector.
 
 ## Reglas de lenguaje (no se negocian)
-- Espanol latam neutro. **Tuteo siempre (tu), nunca voseo.** Prohibido: podes, queres,
-  tenes, haces, mira (imperativo vos), deja (vos), sos, aca. Usa: puedes, quieres, tienes,
-  haces, mira (tu), deja, eres, aqui.
+- Espanol latam neutro. **Tuteo siempre (forma tu), nunca voseo.** Aplica tambien a los
+  imperativos. Correcciones obligatorias (voseo -> tuteo): proba -> prueba, pensa -> piensa,
+  conta -> cuenta, recorda -> recuerda, sumate -> suma. Tambien prohibido: podes, queres,
+  tenes, haces, sos, aca. Usa siempre: puedes, quieres, tienes, haces, eres, aqui.
 - Frases cortas, voz activa. Si se dice en 5 palabras, no uses 10.
 - Lenguaje probabilistico: "tiende a", "suele", "es probable que", "podria". Nunca
   diagnosticos ni sentencias definitivas.
@@ -68,4 +69,9 @@ Cada pieza es un reel (video vertical, contenido por escenas) o un carrusel (sli
 - carousel: slides con kind cover, content y cta.
 - title: el hook visual, corto (maximo 8 palabras).
 - caption: el texto largo que acompana la publicacion en IG/TikTok.
+
+## Sitio y CTA
+El sitio oficial es argomethod.com (la marca es Method en ingles). Si incluyes el sitio o
+un CTA con link, escribe exactamente argomethod.com en minusculas. No inventes variantes
+en espanol como Argometodo.com ni agregues otras URLs.
 `;

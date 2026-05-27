@@ -23,6 +23,10 @@ describe("ARGO_V2_SYSTEM_PROMPT", () => {
     expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("talento");
   });
 
+  it("pins the real site domain so the model does not invent one", () => {
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("argomethod.com");
+  });
+
   it("contains no voseo verb forms and no em dashes", () => {
     const voseo = /\b(podés|querés|tenés|hacés|mirá|hacé|poné|dejá|sentí|vení)\b/i;
     expect(ARGO_V2_SYSTEM_PROMPT).not.toMatch(voseo);
