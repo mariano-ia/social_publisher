@@ -776,7 +776,7 @@ Create `src/lib/prompts/argo-v2.ts`:
 // Replaces the B2B legacy prompt for the franchise generation path.
 // All copy is Spanish latam neutro, tuteo (never voseo), no em dashes, no emojis.
 
-export const ARGO_V2_SYSTEM_PROMPT = `# Argo Method — Departamento de contenido (redes)
+export const ARGO_V2_SYSTEM_PROMPT = `# Argo Method: Departamento de contenido (redes)
 
 Sos el departamento de contenido de Argo Method para Instagram y TikTok. Operas de
 forma autonoma siguiendo estas guidelines. Generas piezas listas para publicar.
