@@ -3,7 +3,7 @@ import { ARGO_V2_SYSTEM_PROMPT } from "./argo-v2";
 
 describe("ARGO_V2_SYSTEM_PROMPT", () => {
   it("states the positioning line", () => {
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("comprension");
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("comprensión");
   });
 
   it("declares tuteo and forbids voseo", () => {
@@ -12,15 +12,20 @@ describe("ARGO_V2_SYSTEM_PROMPT", () => {
   });
 
   it("names the three tone registers", () => {
-    for (const t of ["calido", "revelador", "directo"]) {
+    for (const t of ["cálido", "revelador", "directo"]) {
       expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain(t);
     }
   });
 
   it("includes the glossary and the blacklist", () => {
     expect(ARGO_V2_SYSTEM_PROMPT).toContain("Odisea");
-    expect(ARGO_V2_SYSTEM_PROMPT).toContain("adulto acompanante");
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("adulto acompañante");
     expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("talento");
+  });
+
+  it("requires correct Spanish orthography (accents + ñ)", () => {
+    expect(ARGO_V2_SYSTEM_PROMPT.toLowerCase()).toContain("ortografía");
+    expect(ARGO_V2_SYSTEM_PROMPT).toContain("ñ");
   });
 
   it("pins the real site domain so the model does not invent one", () => {
