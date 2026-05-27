@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { jsonrepair } from "jsonrepair";
 import {
   BatchResponseSchema,
   buildBatchSchema,
@@ -7,6 +6,7 @@ import {
   type BatchResponse,
 } from "./schema";
 import { z } from "zod";
+import { extractJson, stripEmojisDeep } from "./json-utils";
 import type { PostFormat, Cadence } from "@/lib/db/types";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -227,76 +227,3 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
 
 // Silence unused warning — kept for external imports.
 void BatchResponseSchema;
-
-/**
- * Strip emojis and decorative unicode pictographs from any string field,
- * recursively. The runtime puppeteer uses @sparticuz/chromium-min which
- * ships without an emoji font — any emoji Claude emits otherwise renders
- * as a "tofu" placeholder box (a vertical black pill with the unicode
- * name inside). This is a belt-and-suspenders safety net on top of the
- * explicit "no emojis" rule in the user prompt.
- */
-const EMOJI_RE = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu;
-
-function stripEmojisDeep(value: unknown): unknown {
-  if (typeof value === "string") {
-    return value.replace(EMOJI_RE, "").replace(/[ \t]{2,}/g, " ").trim();
-  }
-  if (Array.isArray(value)) {
-    return value.map(stripEmojisDeep);
-  }
-  if (value && typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = stripEmojisDeep(v);
-    }
-    return out;
-  }
-  return value;
-}
-
-/**
- * Parse Claude's response as JSON, with escalating recovery strategies:
- *   1. Direct JSON.parse after stripping markdown fences.
- *   2. Slice from first `{` to last `}` and parse again.
- *   3. Run jsonrepair on the slice — fixes unescaped quotes, missing
- *      commas, trailing commas, single quotes, raw newlines inside
- *      strings, etc. These are the common LLM JSON failure modes.
- */
-function extractJson(text: string): unknown {
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
-
-  // Attempt 1: straight parse
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    /* fall through */
-  }
-
-  // Attempt 2: slice from first { to last }
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    throw new Error("Claude response did not contain JSON");
-  }
-  const sliced = cleaned.slice(start, end + 1);
-  try {
-    return JSON.parse(sliced);
-  } catch {
-    /* fall through */
-  }
-
-  // Attempt 3: repair common LLM JSON mistakes
-  try {
-    const repaired = jsonrepair(sliced);
-    return JSON.parse(repaired);
-  } catch (err) {
-    throw new Error(
-      `Unable to parse Claude response as JSON even after repair: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-}
