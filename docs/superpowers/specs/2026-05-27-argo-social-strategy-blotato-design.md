@@ -119,24 +119,43 @@ Reels se cruzan a IG + TikTok (mismo asset 9:16). Carruseles solo IG.
 - Horarios por defecto pensados para padres (mediodía y noche), configurables por tenant.
 
 ### Nivel de autonomía
-- El sistema genera y prepara los visuales automáticamente.
+- El sistema genera y **renderiza los visuales en Blotato automáticamente** (render antes
+  de revisión: ves el video/carrusel ya terminado, no un guion).
 - **Checkpoint humano obligatorio**: el batch queda "listo para revisión". Recién al
   aprobar en el panel, Blotato agenda y publica.
 - Filtros automáticos previos a revisión: palabras prohibidas + sensibilidad (reúso del
   filtro existente del proyecto), strip de emojis.
 
+### UX de revisión y aprobación
+- **Aviso por email** (vía Resend, ya usado en el ecosistema Argo): cuando la semana está
+  generada y renderizada, llega un email resumen con las piezas y un link directo al panel.
+  El usuario no depende de acordarse de entrar.
+- **El panel es solo para autorizar**: el usuario entra desde el email, ve las piezas ya
+  renderizadas y actúa. No hace falta un editor de texto completo en v1.
+- **Acciones por pieza (v1)**: aprobar, rechazar, regenerar (con una nota de feedback
+  opcional que vuelve al generador). Edición inline de caption y reagendado manual quedan
+  como mejora futura, no v1.
+- **Acción de batch**: "Aprobar y agendar todo" empuja a Blotato las piezas aprobadas, cada
+  una en su slot del calendario.
+- La tarjeta de cada pieza muestra: preview real renderizado por Blotato (el reel se
+  reproduce, el carrusel se desliza), caption, franquicia + tono, y el slot agendado
+  (día, hora, IG/TikTok).
+
 ## Arquitectura de sistema
 
 ### Pipeline autónomo
 ```
-Cron semanal
+Cron semanal (domingo noche)
   -> Claude genera el batch (1 pieza por franquicia, con voz + tono + anti-repetición)
-  -> social-publisher llama blotato_create_visual por pieza (video/carrusel)
+  -> filtros automáticos (palabras prohibidas + sensibilidad + strip emojis)
+  -> social-publisher llama blotato_create_visual por pieza (render antes de revisión)
   -> blotato_get_visual_status hasta que el render esté listo, guarda la URL del asset
   -> estado del run: "ready_for_review"
-  -> el usuario aprueba en el panel
-  -> al aprobar: blotato_create_post agendado al slot del calendario (Argo IG + TikTok)
-  -> Blotato publica
+  -> email resumen (Resend) con las piezas + link al panel
+  -> el usuario entra, ve los previews ya renderizados, aprueba / rechaza / regenera
+  -> al "Aprobar y agendar todo": blotato_create_post agendado al slot del calendario
+     (Argo IG + TikTok)
+  -> Blotato publica durante la semana
   -> se marca published_externally (alimenta el anti-repeat de la próxima generación)
 ```
 
@@ -156,7 +175,11 @@ Cron semanal
    - `blotato_create_post` con scheduledTime según el slot del calendario.
    - Marcar `published_externally` al confirmar.
 5. **Config de calendario/cadencia por tenant**: día + franquicia + plataformas + horario.
-6. **Acción de panel "aprobar y agendar"**: dispara el push a Blotato desde la review.
+6. **Panel de revisión evolucionado**: muestra el preview real renderizado por Blotato
+   por pieza, con acciones aprobar / rechazar / regenerar (nota de feedback opcional) y la
+   acción de batch "Aprobar y agendar todo" que dispara el push a Blotato.
+7. **Email resumen (Resend)**: al quedar el run "ready_for_review", envía un email con las
+   piezas de la semana y un link directo al panel.
 
 ### Qué aporta Blotato (no se construye)
 - Generación de video faceless (AI Story Video con escenas, imagen IA, subtítulos).
@@ -197,7 +220,9 @@ El build puede dividirse en fases independientes:
 - **Fase A — Voz y franquicias**: brand voice v2 + modelo de franquicias + schema de
   contenido. Es la base creativa; se puede validar generando texto antes de tocar Blotato.
 - **Fase B — Integración Blotato**: cuentas, create_visual, create_post, panel aprobar/agendar.
-- **Fase C — Autonomía**: cron semanal + calendario + filtros previos a revisión.
+- **Fase C — Autonomía**: cron semanal + calendario + filtros previos a revisión + email
+  resumen (Resend). El panel de revisión evolucionado (preview Blotato + aprobar/agendar)
+  va con la Fase B.
 
 Cada fase es un plan de implementación propio. La Fase A se puede empezar sin los
 prerrequisitos de Blotato resueltos.
