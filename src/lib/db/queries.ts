@@ -203,7 +203,7 @@ export async function bulkInsertPosts(
 
 export async function updatePost(
   postId: string,
-  patch: Partial<Pick<GeneratedPost, "status" | "rejection_reason" | "title" | "copy" | "hashtags" | "cta" | "visual_template_slug" | "visual_template_id" | "visual_variables">>,
+  patch: Partial<Pick<GeneratedPost, "status" | "rejection_reason" | "title" | "copy" | "copy_en" | "hashtags" | "cta" | "visual_template_slug" | "visual_template_id" | "visual_variables">>,
 ): Promise<void> {
   const sb = createServerClient();
   const { error } = await sb

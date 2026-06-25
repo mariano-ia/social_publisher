@@ -33,6 +33,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
 
   const platform = formatPlatform(post.format);
   const copyText = buildCopyText(post);
+  const hasEnglish = !!(post.copy_en && post.copy_en.trim().length > 0);
 
   const handleCopy = async () => {
     try {
@@ -208,7 +209,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
           className="text-xs text-[var(--text-dim)] hover:text-[var(--text)] text-left font-semibold uppercase tracking-[0.14em] flex items-center gap-1.5"
         >
           <Icon.ChevronRight size={12} className={showCopy ? "rotate-90 transition-transform" : "transition-transform"} />
-          Ver copy completo
+          {hasEnglish ? "Ver copy completo (ES + EN)" : "Ver copy completo"}
         </button>
         {showCopy && (
           <textarea
@@ -249,7 +250,7 @@ export function PostCard({ post, assets, availableTemplates }: Props) {
         <div className="flex items-center gap-1 pt-3 border-t border-[var(--border)]">
           <IconAction
             icon={copiedFlash ? <Icon.Check size={16} /> : <Icon.Copy size={16} />}
-            tooltip={copiedFlash ? "Copiado" : "Copiar texto completo"}
+            tooltip={copiedFlash ? "Copiado" : hasEnglish ? "Copiar texto (ES + EN)" : "Copiar texto completo"}
             onClick={handleCopy}
             disabled={pending}
             flash={copiedFlash}
@@ -369,6 +370,14 @@ function buildCopyText(post: GeneratedPost): string {
   if (post.hashtags && post.hashtags.length > 0) {
     parts.push("");
     parts.push(post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" "));
+  }
+  // Bilingual caption: append the English translation below a separator when
+  // present (Yacaré ships copy in ES + EN; same pattern as the ZIP export).
+  if (post.copy_en && post.copy_en.trim().length > 0) {
+    parts.push("");
+    parts.push("— — — English — — —");
+    parts.push("");
+    parts.push(post.copy_en);
   }
   return parts.join("\n");
 }

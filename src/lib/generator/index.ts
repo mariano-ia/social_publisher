@@ -76,7 +76,7 @@ REGLA DURA: respondé ÚNICAMENTE con un JSON válido (sin markdown, sin backtic
 
 {
   "run_summary": "string corto sobre el ángulo general del batch",
-  "posts": [ ...${total} posts respetando la distribución de arriba ]
+  "posts": [ ...${total} posts respetando la distribución; CADA post con copy (español) y copy_en (inglés) ]
 }`;
 };
 
@@ -181,6 +181,54 @@ const SINGLE_IDEA_USER_PROMPT = (
   language: OutputLanguage,
 ) => (language === "en" ? SINGLE_IDEA_USER_PROMPT_EN(input) : SINGLE_IDEA_USER_PROMPT_ES(input));
 
+/**
+ * Best-effort guarantee that every post ships a bilingual caption. Spanish
+ * tenants (Yacaré) must produce `copy` (ES) + `copy_en` (EN). If the model
+ * omitted copy_en on any post, translate `copy` → English in a single batched
+ * pass. Failures are swallowed (copy_en stays null) so a translation hiccup
+ * never fails an otherwise-good run — the prompt already asks for copy_en, this
+ * is just the safety net.
+ */
+async function ensureBilingualCopy(
+  posts: BatchResponse["posts"],
+  language: OutputLanguage,
+): Promise<void> {
+  if (language !== "es") return;
+  const missing = posts.filter((p) => !p.copy_en || p.copy_en.trim().length === 0);
+  if (missing.length === 0) return;
+  try {
+    const items = missing.map((p, i) => ({ i, copy: p.copy }));
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system:
+        "Sos un traductor profesional. Traducís captions de redes del español rioplatense a un inglés natural y profesional, preservando significado, tono (senior, simple, consejero, primera persona) y los saltos de línea (\\n). No agregás ni quitás contenido. Sin emojis.",
+      messages: [
+        {
+          role: "user",
+          content:
+            `Traducí al inglés el campo "copy" de cada item. Devolvé ÚNICAMENTE un objeto JSON con esta forma exacta (sin markdown):\n` +
+            `{"items":[{"i":<el mismo i>,"copy_en":"<traducción al inglés>"}]}\n\n` +
+            JSON.stringify({ items }),
+        },
+      ],
+    });
+    const text = response.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b.type === "text" ? b.text : ""))
+      .join("");
+    const parsed = extractJson(text) as { items?: Array<{ i: number; copy_en: string }> };
+    for (const item of parsed.items ?? []) {
+      const target = missing[item.i];
+      if (target && typeof item.copy_en === "string" && item.copy_en.trim().length > 0) {
+        target.copy_en = item.copy_en;
+      }
+    }
+  } catch (err) {
+    console.warn("[generator] bilingual fallback translation failed:", err);
+  }
+}
+
 interface CallResult<T> {
   parsed: T;
   retryCount: number;
@@ -219,6 +267,8 @@ export async function generateBatch(input: GenerateBatchInput): Promise<CallResu
       const json = extractJson(text);
       const sanitized = stripEmojisDeep(json);
       const parsed = schema.parse(sanitized);
+      // Guarantee a bilingual caption for Spanish tenants before returning.
+      await ensureBilingualCopy((parsed as BatchResponse).posts, input.language);
       return { parsed: parsed as BatchResponse, retryCount: attempt };
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
