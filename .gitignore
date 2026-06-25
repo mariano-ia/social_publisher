@@ -17,6 +17,7 @@ node_modules/
 
 # Local artifacts
 .scratch/
+.superpowers/
 previews/
 *.tsbuildinfo
 next-env.d.ts
@@ -34,3 +35,4 @@ yarn-error.log*
 
 # Vercel
 .vercel/
+.vercel

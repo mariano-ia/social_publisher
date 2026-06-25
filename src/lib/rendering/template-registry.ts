@@ -8,6 +8,13 @@ import { ycReframe } from "./templates/yacare/yc-reframe";
 import { ycManifestoBlock } from "./templates/yacare/yc-manifesto-block";
 import { ycCover } from "./templates/yacare/yc-cover";
 import { ycCaseStat } from "./templates/yacare/yc-case-stat";
+// Yacaré v2 — "Product Studio" visual system (C loud simples + D quiet carousel)
+import { yc2Statement } from "./templates/yacare/yc2-statement";
+import { yc2Stat } from "./templates/yacare/yc2-stat";
+import { yc2Reframe } from "./templates/yacare/yc2-reframe";
+import { yc2Cover } from "./templates/yacare/yc2-cover";
+import { yc2Content } from "./templates/yacare/yc2-content";
+import { yc2Cta } from "./templates/yacare/yc2-cta";
 import { arCarouselContent } from "./templates/argo/ar-carousel-content";
 import { arCarouselCta } from "./templates/argo/ar-carousel-cta";
 import { arSolidViolet } from "./templates/argo/ar-solid-violet";
@@ -28,6 +35,14 @@ export const HTML_TEMPLATES: Record<string, HtmlTemplateFn> = {
   "yc-manifesto-block": ycManifestoBlock as HtmlTemplateFn,
   "yc-cover": ycCover as HtmlTemplateFn,
   "yc-case-stat": ycCaseStat as HtmlTemplateFn,
+  // Yacaré v2 — "Product Studio" system. Simples (C): yc2-statement/stat/reframe.
+  // Carousel (D): yc2-cover/content/cta (routed by slide.kind in orchestrate).
+  "yc2-statement": yc2Statement as HtmlTemplateFn,
+  "yc2-stat": yc2Stat as HtmlTemplateFn,
+  "yc2-reframe": yc2Reframe as HtmlTemplateFn,
+  "yc2-cover": yc2Cover as HtmlTemplateFn,
+  "yc2-content": yc2Content as HtmlTemplateFn,
+  "yc2-cta": yc2Cta as HtmlTemplateFn,
   // Argo
   "ar-carousel-content": arCarouselContent as HtmlTemplateFn,
   "ar-carousel-cta": arCarouselCta as HtmlTemplateFn,

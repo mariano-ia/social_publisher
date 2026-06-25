@@ -112,6 +112,14 @@ function buildCopyText(post: GeneratedPost): string {
     lines.push("");
     lines.push(post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" "));
   }
+  // Bilingual caption: append the English translation below a separator when
+  // present (Yacaré writes copy in ES + EN; the image stays Spanish-only).
+  if (post.copy_en && post.copy_en.trim().length > 0) {
+    lines.push("");
+    lines.push("— — — English — — —");
+    lines.push("");
+    lines.push(post.copy_en);
+  }
   return lines.join("\n");
 }
 

@@ -65,6 +65,7 @@ Para cada post:
 
    IMPORTANTE: El \`copy\` del post (nivel post) es el caption largo que acompaña la imagen en IG/LI. Pero \`visual_variables.title\` es el texto EN LA IMAGEN y tiene que ser corto.
 6. Para carruseles (ig_carousel o li_carousel), llená \`slides[]\` con exactamente ${cadence.carousel_slides} slides en el orden: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. **slides[].title sigue la misma regla: máximo 8 palabras, hook visual.** El texto largo va en slides[].body. \`index\` empieza en 1 (no en 0).
+7. **COPY BILINGÜE (obligatorio):** escribí \`copy\` en español rioplatense y \`copy_en\` con la traducción del MISMO caption al inglés — mismo mensaje, mismo tono (Product Studio: senior, simple, consejero humilde), sin emojis. La IMAGEN queda SOLO en español: NO traduzcas \`visual_variables\` ni \`slides[]\`. Únicamente el caption del post (\`copy\` → \`copy_en\`) es bilingüe.
 
 REGLA DE VARIEDAD DE ESTILOS (OBLIGATORIA):
 **Cuando tengas múltiples posts del mismo formato, DEBEN usar visual_template_slug DIFERENTES.**
@@ -141,6 +142,8 @@ ${input.text}
 ${input.notes ? `Notas adicionales: ${input.notes}` : ""}
 
 Mantené todo el contexto de marca, voz y reglas. ${input.format === "li_carousel" || input.format === "ig_carousel" ? "Como es carrusel, llená slides[] con 4 slides (cover → content → content → cta)." : ""}
+
+COPY BILINGÜE (obligatorio): escribí \`copy\` en español y \`copy_en\` con la traducción del caption al inglés (mismo mensaje y tono, sin emojis). La imagen queda solo en español — no traduzcas visual_variables ni slides.
 
 PROHIBIDO: ningún campo puede contener emojis, iconos ni símbolos unicode decorativos. Sin excepciones.
 

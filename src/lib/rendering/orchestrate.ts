@@ -128,6 +128,7 @@ async function executeRun(runId: string, input: RunOrchestrationInput): Promise<
     topic_embedding: null,
     title: p.title,
     copy: p.copy,
+    copy_en: p.copy_en ?? null,
     hashtags: p.hashtags,
     cta: p.cta ?? null,
     slot_order: p.slot_order,
@@ -393,27 +394,37 @@ async function renderImagesForPost(tenant: Tenant, post: GeneratedPost): Promise
       .map((s) => s.title ?? "")
       .filter((t) => t.length > 0);
 
+    // Yacaré v2 routes every slide to its dedicated D-family template by kind
+    // (yc2-cover / yc2-content / yc2-cta), independent of the post's assigned
+    // slug. Other html tenants keep the legacy behaviour (yc-cover for the
+    // cover, the post's template for content/cta).
+    const isYacareV2 = tenant.slug === "yacare";
+
     for (const slide of slides) {
       const dims = post.format === "ig_carousel" ? FORMAT_DIMS.ig_carousel : FORMAT_DIMS.li_carousel;
-      // Cover slides use yc-cover regardless of the post's assigned template.
-      // Content + cta slides use the post's assigned template.
-      const slideTemplate = slide.kind === "cover" ? getHtmlTemplate("yc-cover") : tmpl;
+      const slideSlug = isYacareV2
+        ? slide.kind === "cover"
+          ? "yc2-cover"
+          : slide.kind === "cta"
+            ? "yc2-cta"
+            : "yc2-content"
+        : slide.kind === "cover"
+          ? "yc-cover"
+          : slug;
+      const slideTemplate = getHtmlTemplate(slideSlug) ?? tmpl;
       if (!slideTemplate) throw new Error(`Template not found for slide kind ${slide.kind}`);
 
       const html = slideTemplate({
         width: dims.width,
         height: dims.height,
         title: slide.kind === "cover" ? post.title ?? vars.title : slide.title ?? vars.title,
-        subtitle:
-          slide.kind === "cover"
-            ? slide.body ?? vars.subtitle
-            : vars.subtitle,
+        subtitle: slide.kind === "cover" ? slide.body ?? vars.subtitle : vars.subtitle,
         body_text: slide.body ?? vars.body_text,
-        cta: vars.title,
+        cta: post.cta ?? vars.title,
         pillar: post.pillar ?? vars.pillar,
         slide,
         slide_titles: slide.kind === "cover" ? teaserTitles : undefined,
-        total_slides: slide.kind === "cover" ? slides.length : undefined,
+        total_slides: slides.length,
       });
       const result = await renderHtmlToPng({
         html,

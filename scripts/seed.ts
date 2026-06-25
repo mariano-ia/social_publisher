@@ -163,7 +163,8 @@ async function seedYacare() {
         name: "Yacaré",
         website_url: "https://www.yacare.io",
         image_engine: "html",
-        cadence: { ig_feed: 2, li_single: 1, li_carousel: 1, ig_carousel: 0, carousel_slides: 5 },
+        // v2 "Product Studio" cadence: 2 simples (1:1) + 1 carrusel (5 slides).
+        cadence: { ig_feed: 2, li_single: 0, li_carousel: 1, ig_carousel: 0, carousel_slides: 5 },
       })
       .select()
       .single();
@@ -347,21 +348,28 @@ async function seedYacare() {
     console.log("  - brand_voice exists");
   }
 
-  // Visual templates — Yacaré HTML templates (multi format = sirven para los 3)
-  const ycSlugs = [
-    { slug: "yc-contrarian-take", description: "Toma contrarian agresiva (anti-pattern + manifiesto)" },
-    { slug: "yc-process-step", description: "Explicación de un paso del método" },
-    { slug: "yc-faq-card", description: "FAQ con pregunta + respuesta directa" },
-    { slug: "yc-reframe", description: "Concept flip / reframe insightful" },
-    { slug: "yc-manifesto-block", description: "Statement largo de marca con peso variado" },
-    { slug: "yc-case-stat", description: "Slide de stat/número grande para carouseles PYME tipo caso antes/después. Big number hero + label (ANTES/DESPUÉS) + descriptor de una línea." },
+  // Visual templates — Yacaré v2 "Product Studio" system.
+  //   Simples (volumen "C") → format ig_feed: el generador elige 2 de 3 por tanda.
+  //   Carrusel (volumen "D") → un único slug post-level (yc2-cover); las slides
+  //   content/cta se rutean por `kind` en orchestrate (no se eligen acá).
+  // Los templates legacy yc-* quedan en el código pero se desactivan en la DB
+  // vía scripts/refresh-yacare-v2.sql (fuente de verdad del cambio en vivo).
+  const ycTemplates: Array<{
+    slug: string;
+    format: "ig_feed" | "li_carousel_slide";
+    description: string;
+  }> = [
+    { slug: "yc2-statement", format: "ig_feed", description: "Post simple (C): idea fuerte de producto, hook corto, último período en lima." },
+    { slug: "yc2-stat", format: "ig_feed", description: "Post simple (C): un número grande + label corto. Secundario (contenido poco numérico)." },
+    { slug: "yc2-reframe", format: "ig_feed", description: "Post simple (C): contraste/reframe en primera persona, sin tachar al lector." },
+    { slug: "yc2-cover", format: "li_carousel_slide", description: "Carrusel (D): portada. content/cta se rutean por kind (yc2-content / yc2-cta)." },
   ];
-  for (const t of ycSlugs) {
+  for (const t of ycTemplates) {
     await upsertTemplate(tenantId, {
       slug: t.slug,
-      format: "multi",
+      format: t.format,
       engine: "html",
-      weight: t.slug === "yc-manifesto-block" ? 1 : 2,
+      weight: 2,
       description: t.description,
     });
   }

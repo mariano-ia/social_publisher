@@ -46,24 +46,31 @@ src/
       argo-photo.ts          # gpt-image-1 pipeline (legacy Argo)
       html-renderer.ts       # puppeteer wrapper
       template-registry.ts   # registry de templates
-      templates/yacare/      # 5 React templates Yacaré
+      templates/yacare/      # templates Yacaré: yc2-* (sistema v2 activo) + yc-* (legacy)
+        _v2-shared.ts        # tokens/fuentes/helpers del sistema v2
+        yc2-statement|stat|reframe.ts   # simples 1:1 (volumen "C", loud)
+        yc2-cover|content|cta.ts        # carrusel 4:5 (volumen "D", quiet)
   components/
   middleware.ts              # auth check
 scripts/
   seed.ts                    # seed inicial de tenants
+  refresh-yacare-v2.sql      # migración live: copy_en + cadencia + templates + voz Product Studio
 docs/
   cleanup-commands.md        # comandos manuales para cleanup post-cutover
+  superpowers/specs/         # specs de diseño (ver 2026-06-25-yacare-visual-refresh)
 ```
 
 ## Tenants iniciales
-- **Argo Method** (`argo`) — usa pipeline gpt-image-1 con STYLE_BASE histórico. Brand voice via `system_prompt_override` (113 líneas legacy).
-- **Yacaré** (`yacare`) — usa HTML→PNG con 5 templates. Brand voice estructurado: archetype rebel, voseo rioplatense, púrpura `#8A5EFF`.
+- **Argo Method** (`argo`) — usa pipeline gpt-image-1 con STYLE_BASE histórico. Brand voice via `system_prompt_override` (113 líneas legacy). Output en inglés.
+- **Yacaré** (`yacare`) — usa HTML→PNG con el sistema visual **v2 "Product Studio"** (`yc2-*`). Un partido gráfico, dos volúmenes: simples 1:1 "loud" (púrpura pleno, Archivo Black) + carrusel 4:5 "quiet" (dark, Space Grotesk). Acento lima `#D8FF3E`, metadatos Space Mono, grano. Voz: archetype `guide`, consejero humilde en primera persona. **Imagen en español, copy bilingüe ES+EN** (`copy` + `copy_en`). Ver [docs/superpowers/specs/2026-06-25-yacare-visual-refresh-design.md](docs/superpowers/specs/2026-06-25-yacare-visual-refresh-design.md).
 
 ## Cadencia por batch
-4 IG feed + 2 LI single + 2 LI carrusel × 5 slides = **8 posts / 18 imágenes** por batch.
+Por tenant (campo `tenant.cadence`):
+- **Yacaré:** 2 simples (`ig_feed` 1:1) + 1 carrusel (`li_carousel`, 5 slides) = **3 posts / 7 imágenes**. "Dos golpes cortos + una pieza explicativa".
+- **Argo:** 2 IG feed + 1 IG carrusel (4 slides).
 
 ## Modos de generación
-- **Batch**: el botón "Generar tanda" → 8 posts coherentes
+- **Batch**: el botón "Generar tanda" → la tanda completa según la cadencia del tenant
 - **Single idea**: form con texto libre → 1 post del formato elegido
 
 ## Anti-repetición

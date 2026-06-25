@@ -21,6 +21,10 @@ export const GeneratedPostSchema = z.object({
   format: z.enum(["ig_feed", "li_single", "li_carousel", "ig_carousel"]),
   title: z.string().min(1),
   copy: z.string().min(1),
+  // Bilingual caption: Spanish in `copy`, English in `copy_en`. The IMAGE stays
+  // single-language (Spanish for Yacaré) — only the caption is translated.
+  // Optional so English-only tenants (Argo) can omit it.
+  copy_en: z.string().nullish(),
   pillar: z.string().nullish().transform((v) => v ?? ""),
   topic: z.string().nullish().transform((v) => v ?? ""),
   hashtags: z.array(z.string()).nullish().transform((v) => v ?? []),

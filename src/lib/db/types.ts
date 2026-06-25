@@ -133,6 +133,8 @@ export interface GeneratedPost {
   topic_embedding: string | null;
   title: string | null;
   copy: string;
+  /** English translation of the caption (Yacaré bilingual). Null for EN-only tenants. */
+  copy_en: string | null;
   hashtags: string[];
   cta: string | null;
   slot_order: number | null;
