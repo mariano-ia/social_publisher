@@ -5,7 +5,13 @@ import { z } from "zod";
 // The orchestrator renumbers slides to 1..N canonically before persisting.
 export const SlideSchema = z.object({
   index: z.number().int().min(0).max(6),
-  kind: z.enum(["cover", "content", "cta"]),
+  // Normalize before validating: the model sometimes echoes a template-style
+  // name into `kind` (e.g. "yc2-cover", "yc2-content"). Strip any yc2-/yc-/ar-
+  // prefix and lowercase so it still resolves to the canonical cover/content/cta.
+  kind: z.preprocess(
+    (v) => (typeof v === "string" ? v.toLowerCase().trim().replace(/^(yc2|yc|ar)-/, "") : v),
+    z.enum(["cover", "content", "cta"]),
+  ),
   title: z.string().nullish(),
   subtitle: z.string().nullish(),
   body: z.string().nullish(),

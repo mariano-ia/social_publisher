@@ -64,7 +64,7 @@ Para cada post:
    - \`accent\`, \`pillar\`, \`scene_hint\`: metadata opcional.
 
    IMPORTANTE: El \`copy\` del post (nivel post) es el caption largo que acompaña la imagen en IG/LI. Pero \`visual_variables.title\` es el texto EN LA IMAGEN y tiene que ser corto.
-6. Para carruseles (ig_carousel o li_carousel), llená \`slides[]\` con exactamente ${cadence.carousel_slides} slides en el orden: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. **slides[].title sigue la misma regla: máximo 8 palabras, hook visual.** El texto largo va en slides[].body. \`index\` empieza en 1 (no en 0).
+6. Para carruseles (ig_carousel o li_carousel), llená \`slides[]\` con exactamente ${cadence.carousel_slides} slides en el orden: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Cada slide tiene \`{index, kind, title, body, visual_hint}\`. **slides[].title sigue la misma regla: máximo 8 palabras, hook visual.** El texto largo va en slides[].body. \`index\` empieza en 1 (no en 0). **\`slides[].kind\` debe ser EXACTAMENTE uno de: \`cover\`, \`content\`, \`cta\` (minúscula, sin prefijo — NUNCA "yc2-cover" ni el nombre de un template).**
 7. **COPY BILINGÜE (obligatorio):** escribí \`copy\` en español rioplatense y \`copy_en\` con la traducción del MISMO caption al inglés — mismo mensaje, mismo tono (Product Studio: senior, simple, consejero humilde), sin emojis. La IMAGEN queda SOLO en español: NO traduzcas \`visual_variables\` ni \`slides[]\`. Únicamente el caption del post (\`copy\` → \`copy_en\`) es bilingüe.
 
 REGLA DE VARIEDAD DE ESTILOS (OBLIGATORIA):
@@ -116,7 +116,7 @@ For each post:
    - \`accent\`, \`pillar\`, \`scene_hint\`: optional metadata.
 
    IMPORTANT: The post-level \`copy\` is the long caption that accompanies the image on IG/LI. But \`visual_variables.title\` is the text ON the image and must be short.
-6. For carousels (ig_carousel or li_carousel), fill \`slides[]\` with exactly ${cadence.carousel_slides} slides in order: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Each slide has \`{index, kind, title, body, visual_hint}\`. **slides[].title follows the same rule: max 8 words, visual hook.** Long text belongs in slides[].body. \`index\` starts at 1 (not 0).
+6. For carousels (ig_carousel or li_carousel), fill \`slides[]\` with exactly ${cadence.carousel_slides} slides in order: cover → ${Array(cadence.carousel_slides - 2).fill("content").join(" → ")} → cta. Each slide has \`{index, kind, title, body, visual_hint}\`. **slides[].title follows the same rule: max 8 words, visual hook.** Long text belongs in slides[].body. \`index\` starts at 1 (not 0). **\`slides[].kind\` must be EXACTLY one of: \`cover\`, \`content\`, \`cta\` (lowercase, no prefix — NEVER "yc2-cover" or a template name).**
 
 STYLE VARIETY RULE (MANDATORY):
 **When you have multiple posts of the same format, they MUST use DIFFERENT visual_template_slug values.** Never repeat the same slug twice within the same format — ensures visual variety across the batch.
